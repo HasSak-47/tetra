@@ -28,6 +28,7 @@ class interact;
 
 class board;
 class piece;
+class rect;
 
 extern std::array<const color* const, 6> colors;
 
@@ -92,36 +93,41 @@ class renderee{
 private:
     void render();
 protected:
-    std::vector<SDL_Rect> m_rects;
+    unique_vector<SDL_Rect> m_rects;
     virtual void set_rectangles();
     color c = {};
-
-    bool should_render = true;
+    vec2f m_pos = {};
 
 public:
+    bool should_render = true;
 
     ~renderee();
     renderee();
+    renderee(color col);
+    renderee(float x, float y);
+    renderee(float x, float y, color col);
+    renderee(unique_vector<SDL_Rect> rects);
+    renderee(unique_vector<SDL_Rect> rects, color col);
 
     renderee(renderee&& other);
     renderee(renderee& other) = delete;
-
     renderee& operator=(renderee&& other);
 
-    renderee(std::vector<SDL_Rect> rects);
-    renderee(std::vector<SDL_Rect> rects, color col);
-    renderee(color col);
+    void set_pos(float x, float y);
 
     friend class renderer;
 };
 
+
 class interact{
 protected:
-    SDL_KeyboardEvent event;
+    SDL_KeyboardEvent event = {};
 public:
+    virtual void act();
 };
 
 extern renderer ren;
 extern bool end_game;
+extern color piece_color[];
 
 #endif

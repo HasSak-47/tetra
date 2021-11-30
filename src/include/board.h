@@ -2,13 +2,11 @@
 #ifndef _BOARD_H__
 #define _BOARD_H__
 #include <renderer.h>
+#include <rect.h>
 
-class board : public renderee{
-private:
-    void set_rectangles() override;
+class board : public rect{
 protected:
-    vec2f m_pos = {};
-    vec2i m_units = {};
+    void place_piece(piece& p);
 public:
     enum class tile {
         empty, i, j, l, t, s, z
@@ -20,7 +18,7 @@ public:
 
     tile tiles[10][16] = {};
 
-    bool place_piece(piece& p);
+    bool evaluate_next(piece& p);
     friend class renderer;
 };
 

@@ -46,8 +46,8 @@ void renderer::render() {
     while(!m_close){
         //in this part it locks the render_mutex and starts rendering the scene
         //since lock_guard only unlocks when unscoped I created this
+        uint32_t start = SDL_GetTicks();
         {
-            uint32_t start = SDL_GetTicks();
             rendering = true;
             std::lock_guard<std::mutex> lock(render_mutex);
             //this is the start time of the rendering process
@@ -60,6 +60,8 @@ void renderer::render() {
             if(m_event.type == SDL_QUIT) {
                 end_game = true; //set that the game ended 
                 m_close = true; //set that the window can close
+
+                std::cout << "Closing window\n";
             }
 
             //this renders each of the renderee objects
@@ -71,9 +73,14 @@ void renderer::render() {
             delta_time = SDL_GetTicks() - start;
         }
         rendering = false;
-        if(17 - delta_time > 0)
-        std::this_thread::sleep_for(std::chrono::milliseconds(17 - delta_time));
-        
+        SDL_Event close_event = m_event;
+        while(close_event.type != SDL_QUIT && SDL_GetTicks() - start < 16){
+            SDL_PollEvent(&close_event);
+            if(close_event.type == SDL_QUIT){
+                end_game = true; //set that the game ended 
+                m_close = true; //set that the window can close
+            }
+        }
     }
 };
 

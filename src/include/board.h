@@ -2,26 +2,22 @@
 #ifndef _BOARD_H__
 #define _BOARD_H__
 #include <renderer.h>
-#include <vector>
 
-class Board{
+class board{
+private:
+protected:
 public:
-    //each states corresponds to a piece and n means empty
-    enum states{ n = 0, l, s, z, t, j, i };
-private: 
-    states m_board[10][16] = {};
+    enum class tile {
+        empty, i, j, l, t, s, z
+    };
 
-    void place(const piece& p);
+    board();
 
-public:
-    bool evaluate(const piece& p);
+    tile tiles[10][16] = {};
 
-    unsigned score = 0;
-    void save_score();
-
-    std::vector<unsigned> get_scoreboard();
-
-    states* operator[](size_t index);
-    states* operator[](int index);
+    bool place_piece(piece& p);
 };
+
+extern board playfield;
+
 #endif

@@ -1,24 +1,32 @@
 #include <renderer.h>
 #include <thread>
 
-renderer ren;
+
+static vec2i set_unit(vec2i& screen_size){
+    return {screen_size.x / 24, screen_size.y / 18};
+}
 
 renderer::renderer() : m_win(nullptr, &SDL_DestroyWindow), m_ren(nullptr, &SDL_DestroyRenderer){}
 
 renderer::renderer(const char* name, int width, int height): 
     m_win( SDL_CreateWindow(name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0), &SDL_DestroyWindow),
     m_ren( SDL_CreateRenderer(m_win.get(), -1, 0), &SDL_DestroyRenderer),
-    m_close(false),
-    m_dimention{width, height}{}
+    m_dimention(width, height),
+    m_unit(set_unit(m_dimention)),
+    m_unit_dimention(24 , 18)
+    {
+    std::cout << "unit " << m_unit.x << " : " << m_unit.y << '\n';
+    std::cout << "dimentions " << width << " : " << height << '\n';
+}
 
 renderer::~renderer() {}
 
 renderer::renderer(renderer&& other) :
     m_win(std::move(other.m_win)),
     m_ren(std::move(other.m_ren)),
-    m_close(other.m_close),
-    m_dimention (other.m_dimention),
-    m_event(std::move(other.m_event))
+    m_event(std::move(other.m_event)),
+    m_dimention (std::move(other.m_dimention)),
+    m_unit(std::move(other.m_unit))
     {}
 
 renderer& renderer::operator=(renderer&& other) {
@@ -29,6 +37,7 @@ renderer& renderer::operator=(renderer&& other) {
     m_close     = ( std::move(other.m_close) );
     m_event     = ( std::move(other.m_event) );
     m_dimention = ( std::move(other.m_dimention) );
+    m_unit      = ( std::move(other.m_unit) );
 
     return *this;
 }
@@ -54,7 +63,7 @@ void renderer::render() {
             }
 
             //this renders each of the renderee objects
-            for(auto& renderee : renderee::renderees){
+            for(auto& renderee : renderees){
                 renderee->render();
             }
 
@@ -62,24 +71,31 @@ void renderer::render() {
             delta_time = SDL_GetTicks() - start;
         }
         rendering = false;
-        std::this_thread::sleep_for(std::chrono::milliseconds(delta_time));
+        if(17 - delta_time > 0)
+        std::this_thread::sleep_for(std::chrono::milliseconds(17 - delta_time));
+        
     }
 };
 
-const bool renderer::should_close(){
+bool renderer::should_close(){
     return m_event.type == SDL_QUIT;
 }
 
-const SDL_Event renderer::get_event(){
+SDL_Event renderer::get_event(){
     return m_event;
 }
 
-const vec2i renderer::get_dimentions(){
+vec2i renderer::get_dimentions(){
     return this->m_dimention;
 }
 
-const vec2i renderer::get_unit(){
-    return this->unit;
+vec2i renderer::get_unit_dimentions(){
+    return this->m_unit_dimention;
+}
+
+
+vec2i renderer::get_unit(){
+    return this->m_unit;
 }
 
 SDL_Renderer* renderer::get_renderer(){

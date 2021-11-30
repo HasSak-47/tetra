@@ -8,13 +8,13 @@ class vec2 {
 public:
     T x, y;
 
-    vec2() : x(), y() {}
+    vec2() : x(0), y(0) {}
     ~vec2() {};
 
-    vec2(T x) : x(x), y() {}
+    vec2(T x) : x(x), y(0) {}
     vec2(T x, T y) : x(x), y(y) {}
-    vec2(const vec2<T>& other) : x(x), y(y) {}
-    vec2(vec2<T>&& other) : x(x), y(y) {}
+    vec2(const vec2<T>& other) : x(other.x), y(other.y) {}
+    vec2(vec2<T>&& other) : x(other.x), y(other.y) {}
 
     vec2& operator=(const vec2<T>& other) {
         if(this == &other) return *this;

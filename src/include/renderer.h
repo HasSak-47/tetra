@@ -48,8 +48,11 @@ private:
     //height and width
     vec2i m_dimention = {0,0};
 
+    //height and with in units
+    vec2i m_unit_dimention = {0,0};
+
     //how big a square is
-    vec2i unit = {30, 30};
+    vec2i m_unit = {0, 0};
 
     uint32_t delta_time = 0;
 
@@ -72,24 +75,29 @@ public:
     //it renders a frame and tells the time it took
     void render();
     //to measure when the frame got rendered, when it ended, and how much it took
-    const bool should_close();
+    bool should_close();
 
-    const SDL_Event get_event();
-    const vec2i get_unit();
-    const vec2i get_dimentions();
+    SDL_Event get_event();
+    vec2i get_unit();
+    vec2i get_dimentions();
+    vec2i get_unit_dimentions();
 
     SDL_Renderer* get_renderer();
+
+    //all the objects that will be rendered in the order
+    std::vector<renderee*> renderees;
 };
 
 class renderee{
 private:
-    //the order in which each renderee objects will be rendered
-    static std::vector<renderee*> renderees;
     void render();
-    std::vector<SDL_Rect> m_rects;
 protected:
+    std::vector<SDL_Rect> m_rects;
     virtual void set_rectangles();
     color c = {};
+
+    bool should_render = true;
+
 public:
 
     ~renderee();

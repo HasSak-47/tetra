@@ -1,4 +1,4 @@
-# Tetra: 
+# Tetra
 this is the classical game of tetris made in c++ and using the SDL framework
 
 the project is divided into several classes:

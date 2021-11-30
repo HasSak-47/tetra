@@ -7,20 +7,26 @@
 #include <renderer.h>
 #include <piece.h>
 
-std::mutex sync_mutex;
-std::promise<bool> ended;
+static std::condition_variable condition;
+static std::mutex sync_mutex;
+static SDL_Event event;
+static bool ended = false;
+static renderer ren;
 
 void game_loop(){
     SDL_Init(SDL_INIT_VIDEO);
 
-    renderer ren("test0", 720, 600);
     uint32_t delta = 16;
+    ren = renderer("test0", 720, 600);
 
     while(!ren.should_close()){
-        std::unique_lock<std::mutex> u_lock(sync_mutex);
-        delta = ren.render();
-        u_lock.unlock();
-
+        {
+            std::lock_guard<std::mutex> u_lock(sync_mutex);
+            //std::cout << "started rendering\n";
+            delta = ren.render();
+            event = ren.get_event();
+            //std::cout << "rendering ended\n";
+        }
         while(delta < 16 && !ren.should_close()) {
             delta = SDL_GetTicks() - ren.start;
         }
@@ -33,25 +39,41 @@ void game_loop(){
 void piece_falling(){
     uint32_t start = SDL_GetTicks(), end = 0, delta_time = 0;
     while(!end_game){
+        std::lock_guard<std::mutex> u_lock(sync_mutex);
+
         end = SDL_GetTicks();
         delta_time = end - start;
-        if(delta_time  < 1000) continue;
-        std::cout << "delta_time: " << delta_time << '\n';
+        if(!falling.update(delta_time)) {
+            continue;
+        }
         start = end;
         end = SDL_GetTicks();
-        falling.update(delta_time);
+    }
+}
+
+void process_input(){
+    while(!end_game){
+        std::lock_guard<std::mutex> u_lock(sync_mutex);
+        if(event.key.type == SDL_KEYUP) continue;
+        if(!falling.input(event.key.keysym.sym)) continue;
+
+        u_lock.~lock_guard();
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
 int main(){
     std::cout << "start\n";
     std::vector<std::thread> threads;
-    std::future<bool> future = ended.get_future();
 
     threads.push_back(std::thread(game_loop));
     threads.push_back(std::thread(piece_falling));
+    threads.push_back(std::thread(process_input));
     for(auto& thread : threads){
         thread.join();
     }
+
+    SDL_Quit();
+    std::cout << "end!\n";
     return 0;
 }

@@ -7,9 +7,10 @@
 class board : public rect{
 protected:
     void place_piece(piece& p);
+    void set_rectangles() override;
 public:
     enum class tile {
-        empty, i, j, l, t, s, z
+        empty, i, o, j, l, t, s, z
     };
 
     board();
@@ -22,6 +23,16 @@ public:
     friend class renderer;
 };
 
+class placed : public renderee{
+protected:
+    void set_rectangles() override;
+public:
+    placed(color c);
+
+    friend class board;
+};
+
+extern placed parts[];
 extern board playfield;
 
 #endif

@@ -8,11 +8,14 @@ class piece : public renderee, protected interact{
 protected:
     void set_rectangles() override;
     void act() override;
+    void set_padding();
 
     vec2i board_pos = {4, 15};
     vec2i pieces[4] = {};
     vec2i padding = {};
     board& m_board;
+    size_t piece_t = {};
+
 public:
     enum class side{
         left = -1, right = 1
@@ -21,7 +24,7 @@ public:
     std::mutex piece_mutex;
     static int speed;
 
-    piece() = delete;
+    piece();
 
     piece(
         board& b,
@@ -32,25 +35,29 @@ public:
 
         int cx, int cy,
 
-        color col
+        size_t type
     );
 
     piece(const piece& other);
     piece(piece&& other);
 
     piece& operator=(const piece& other);
-    piece& operator=(piece&& other);
 
     void rotate();
     void loop();
     void move_down();
     void move_side(side s);
     void drop();
+
+    friend class board;
 };
+
+void generate_piece_queue();
+size_t get_next();
 
 extern piece falling;
 extern piece next;
 extern piece saved;
-extern const piece tetros[];
+extern piece tetros[];
 
 #endif

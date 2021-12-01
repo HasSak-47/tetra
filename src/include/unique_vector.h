@@ -15,6 +15,7 @@ inline unique_vector<T> move_unique_vector(unique_vector<T>& source){
     size_t size = source.size();
     destiny = unique_vector<T>(size);
 
+    source.clear();
     std::move(source.begin(), source.end(), destiny.begin());
 
     return destiny;

@@ -2,15 +2,16 @@
 #include <random>
 #include <thread>
 
-int piece::speed = 1000;
+int piece::speed = 250;
 
 color piece_color[] = {
-    {0x00, 0x00, 0xff},
-    {0x00, 0xff, 0x00},
+    {0x55, 0x55, 0xff},
+    {0x55, 0xff, 0x55},
     {0xff, 0xff, 0xff},
-    {0xff, 0x00, 0x00},
-    {0xff, 0x00, 0xff},
-    {0xff, 0xff, 0x00}
+    {0xff, 0x55, 0x55},
+    {0xff, 0x55, 0xff},
+    {0xff, 0xff, 0x55},
+    {0xff, 0xff, 0xff}
 };
 
 void piece::act(){
@@ -50,15 +51,28 @@ void piece::act(){
 }
 
 void piece::loop(){
-    uint8_t start = SDL_GetTicks(), end = 0;
+    set_padding();
+    *this = tetros[0];
+
+    uint32_t start = SDL_GetTicks(), end = SDL_GetTicks();
+
     while(!end_game){
-        end = SDL_GetTicks();
-        if(end - start < speed) continue;
+        {
+            std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
+            ren.ended_render.wait(ren_lock, []{return !ren.rendering || end_game;});
+            end = SDL_GetTicks();
+            if(end - start < speed) continue;
+            start = end;
 
-        std::lock_guard<std::mutex> lock(this->piece_mutex);
-        move_down();
-
+            ren_lock.unlock();
+            move_down();
+        }
+        std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
+        ren.ended_render.wait(ren_lock, []{return ren.rendering || end_game;});
+        ren_lock.unlock();
     }
+
+    std::cout << "ended falling loop\n";
 }
 
 void piece::set_rectangles(){
@@ -70,9 +84,23 @@ void piece::set_rectangles(){
     for(auto& p : pieces){
         vec2i pos = {
             padding.x + unit.x * (board_pos.x + p.x),
-            padding.y + unit.y * (15 - (board_pos.y + p.y) )
+            padding.y + unit.y * ( 15 - (board_pos.y + p.y) )
         };
+
         ptr = std::unique_ptr<SDL_Rect>(new SDL_Rect {pos.x, pos.y, unit.x, unit.y});
         this->m_rects.push_back(std::move(ptr));
     }
+}
+
+piece& piece::operator=(const piece& other){
+    if(this == &other) return *this;
+
+    for(size_t i = 0; i < 4; ++i){
+        this->pieces[i] = other.pieces[i];
+    }
+
+    this->board_pos = other.board_pos;
+    this->piece_t = other.piece_t;
+
+    return *this;
 }

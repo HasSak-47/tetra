@@ -8,32 +8,29 @@
 
 #include <chrono>
 
-bool end_game = true;
+bool end_game = false;
 renderer ren("test1", 720, 600);
 board playfield(0, 0, 10, 16);
-rect preview(-0.6, 0, 4, 8, color {0x90, 0x90, 0x92, 0xff});
+rect preview(-0.6, 0, 4, 8, color {0x15, 0x15, 0x17, 0xff});
 int main(){
-    piece p(
-        playfield, 
-        -1, 1,
-         0, 1,
-         1, 1,
-         2, 1,
-         4, 14,
-        piece_color[0]
-    );
+    piece falling;
     ren.renderees.push_back(&playfield);
     ren.renderees.push_back(&preview);
-    ren.renderees.push_back(&p);
+    ren.renderees.push_back(&falling);
+
+    for(size_t i = 0; i < 7; ++i){
+        ren.renderees.push_back(&parts[i]);
+    }
 
     std::cout << "start\n";
 
-    ren.render();
-    //std::vector<std::thread> threads;
-    //threads.push_back(std::thread(&renderer::render, &ren));
-    //for(auto& thr : threads){
-    //    thr.join();
-    //}
+    std::vector<std::thread> threads;
+//    threads.push_back(std::thread(generate_piece_queue));
+    threads.push_back(std::thread(&renderer::render, &ren));
+    threads.push_back(std::thread(&piece::loop, &falling));
+    for(auto& thr : threads){
+        thr.join();
+    }
 
     std::cout << "end!\n";
     return 0;

@@ -1,7 +1,6 @@
 #include <renderer.h>
 #include <thread>
 
-
 static vec2i set_unit(vec2i& screen_size){
     return {screen_size.x / 24, screen_size.y / 18};
 }
@@ -14,10 +13,7 @@ renderer::renderer(const char* name, int width, int height):
     m_dimention(width, height),
     m_unit(set_unit(m_dimention)),
     m_unit_dimention(24 , 18)
-    {
-    std::cout << "unit " << m_unit.x << " : " << m_unit.y << '\n';
-    std::cout << "dimentions " << width << " : " << height << '\n';
-}
+    {}
 
 renderer::~renderer() {}
 
@@ -48,37 +44,53 @@ void renderer::render() {
         //since lock_guard only unlocks when unscoped I created this
         uint32_t start = SDL_GetTicks();
         {
-            rendering = true;
             std::lock_guard<std::mutex> lock(render_mutex);
-            //this is the start time of the rendering process
-
-            //we get the inputs
-            SDL_PollEvent(&m_event);
-            SDL_SetRenderDrawColor(m_ren.get(), 0x1a, 0x1a, 0x1a, 0x88); //set the background color
-            SDL_RenderClear(m_ren.get()); //clear the screen
-
-            if(m_event.type == SDL_QUIT) {
-                end_game = true; //set that the game ended 
-                m_close = true; //set that the window can close
-
-                std::cout << "Closing window\n";
-            }
-
-            //this renders each of the renderee objects
-            for(auto& renderee : renderees){
-                renderee->render();
-            }
-
-            SDL_RenderPresent(m_ren.get());
-            delta_time = SDL_GetTicks() - start;
+            rendering = true;
+            this->ended_render.notify_all();
         }
-        rendering = false;
+        //this is the start time of the rendering process
+
+        //we get the inputs
+        SDL_PollEvent(&m_event);
+        SDL_SetRenderDrawColor(m_ren.get(), 0x1a, 0x1a, 0x1a, 0x88); //set the background color
+        SDL_RenderClear(m_ren.get()); //clear the screen
+
+        if(m_event.type == SDL_QUIT) {
+            end_game = true; //set that the game ended 
+            m_close = true; //set that the window can close
+
+            std::cout << "Closing window\n";
+            rendering = false;
+            this->ended_render.notify_all();
+            break;
+        }
+
+        //this renders each of the renderee objects
+        for(auto& renderee : renderees){
+            renderee->render();
+        }
+
+        SDL_RenderPresent(m_ren.get());
+        delta_time = SDL_GetTicks() - start;
+
+        {
+            std::lock_guard<std::mutex> lock(render_mutex);
+            rendering = false;
+            this->ended_render.notify_all();
+        }
+
         SDL_Event close_event = m_event;
-        while(close_event.type != SDL_QUIT && SDL_GetTicks() - start < 16){
+        while(close_event.type != SDL_QUIT && SDL_GetTicks() - start < 30){
             SDL_PollEvent(&close_event);
             if(close_event.type == SDL_QUIT){
                 end_game = true; //set that the game ended 
                 m_close = true; //set that the window can close
+
+                std::cout << "Closing rendered window\n";
+                rendering = false;
+                this->ended_render.notify_all();
+            
+                return;
             }
         }
     }

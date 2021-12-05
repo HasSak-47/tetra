@@ -16,7 +16,6 @@ color piece_color[] = {
 
 void piece::act(){
     std::cout << "act thread: " << std::this_thread::get_id() << '\n';
-    std::ostringstream sstr;
     bool cont = true;
     uint32_t start = 0;
     SDL_Keycode prev;

@@ -40,7 +40,6 @@ renderer& renderer::operator=(renderer&& other) {
 }
 
 void renderer::render() {
-    std::ostringstream sstr;
     std::cout << "render thread: " << std::this_thread::get_id() << '\n';
     {
         std::lock_guard<std::mutex> lock(render_mutex);

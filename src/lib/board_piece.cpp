@@ -4,6 +4,10 @@
 #include <chrono>
 #include <random>
 #include <future>
+#include <fstream>
+#include <algorithm>
+
+#include <cmath>
 
 const piece tetros[] = {{
         playfield, // I shape
@@ -11,25 +15,24 @@ const piece tetros[] = {{
          0, 1,
          1, 1,
          2, 1,
-
          4, 14,
-        0
+        0,
+        -0.5f, -0.5f
     },{
         playfield, // o shape
          0, 0,
          1, 0,
          0, 1,
          1, 1,
-
          3, 14,
-        1
+        1,
+         -0.5f, -0.5f
     },{
         playfield, //s shape
         -1, 0,
          0, 0,
          0, 1,
          1, 1,
-
          4, 14,
         2
     },{
@@ -67,50 +70,6 @@ const piece tetros[] = {{
     }
 };
 
-static std::default_random_engine generator;
-static std::uniform_int_distribution<size_t> distribution(0,6);
-
-static void generate_orders(size_t order[6]){
-    for(size_t i = 0; i < 6; ++i){
-        bool unique = true;
-        do{
-            unique = true;
-            order[i] = distribution(generator);
-            for(size_t j = 0; j < i; ++j){
-                if(order[i] == order[j]) {
-                    unique = false;
-                    break;
-                }
-            } 
-            if(!unique) continue;
-        }while(!unique);
-    }
-}
-
-std::mutex gen_mutex;
-
-static size_t uses = 0;
-static size_t order[7] = {};
-
-void generate_piece_queue(){
-    generate_orders(order);
-    while(!end_game){
-        std::lock_guard<std::mutex> lock(gen_mutex);
-
-        if(uses > 7){
-            generate_orders(order);
-            uses = 0;
-        }
-        else continue;
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-    }
-}
-
-size_t get_next(){
-    std::lock_guard<std::mutex> lock(gen_mutex);
-    return order[uses++];
-}
-
 piece::piece(
     board& b,
     int x1, int y1,
@@ -120,7 +79,8 @@ piece::piece(
 
     int cx, int cy,
 
-    size_t type
+    size_t type,
+    float ax, float ay
 ) : 
     m_board(b),
     renderee(0, 0, piece_color[type]),
@@ -132,14 +92,21 @@ piece::piece(
         {x4, y4},
     },
     padding(b.get_padding()),
-    piece_t(type)
+    m_color(type),
+    axis{ax, ay}
 {
     should_render = false;
 }
 
+piece::piece(board& b, std::string path) : 
+    m_board(b){
+    std::ifstream in_file(path);
+    
+}
+
 piece::piece() : 
     m_board(tetros[0].m_board),
-    renderee(0, 0, piece_color[tetros[0].piece_t]),
+    renderee(0, 0, piece_color[tetros[0].m_color]),
     board_pos(tetros[0].board_pos),
     pieces(tetros[0].pieces),
     padding(tetros[0].padding) {
@@ -160,15 +127,53 @@ bool board::evaluate_next(piece& p){
     if(!free){
         for(auto& pc : p.pieces){
             vec2i pos = {p.board_pos.x + pc.x, p.board_pos.y + pc.y};
-            tiles[pos.x][pos.y] = static_cast<tile>(p.piece_t + 1) ;
+            tiles[pos.x][pos.y] = static_cast<tile>(p.m_color + 1) ;
         }
     }
+
+    
 
     return free;
 }
 
-void piece::rotate() {
+static const complexf rotator = {0, -1};
 
+
+
+void piece::rotate() {
+    if(this->m_color == 1) return; 
+
+    piece copy = *this;
+
+    vec2i max = {}, min = {};
+    for(auto& pc : pieces){
+        complexf data = complexf(pc.x,pc.y) + axis;
+        data *= rotator;
+        data.x = ceil(data.x); data.y = ceil(data.y);
+
+        pc = {(int)data.x, (int)data.y};
+
+        if(pc.x + board_pos.x> max.x) max.x = pc.x + board_pos.x; 
+        else if(pc.x + board_pos.x < min.x) min.x = pc.x + board_pos.x;
+
+        if(pc.y > max.y + board_pos.y) max.y = pc.y + board_pos.y; 
+        else if(pc.y < min.y + board_pos.y) min.y = pc.y + board_pos.y; 
+    }
+    if(max.x > 9) board_pos.x -= max.x - 9;
+    if(min.x < 0) board_pos.x -= min.x;
+
+    if(max.y > 15) board_pos.y -= max.y - 15;
+    if(min.y < 0) board_pos.y -= min.y;
+
+    /*
+    for(auto& pc : pieces){
+        vec2i pos = {pc.x + board_pos.x, pc.y + board_pos.y};
+
+        if(this->m_board.tiles[pos.x][pos.y] != board::tile::empty){
+
+        }
+    }
+    */
 }
 
 void piece::move_down() {
@@ -187,7 +192,6 @@ void piece::move_side(side s) {
     bool colition = false;
     for(auto& pc : pieces){
         vec2i pos = {pc.x + board_pos.x, pc.y + board_pos.y};
-        //std::cout << "colition : " << pos.x << " : " <<  (((s == side::left)? 0 : 15)) << " : " << (m_board.tiles[pc.x + (int)s][pc.y] != board::tile::empty) << '\n';
         if(pos.x == ((s == side::left)? 0 : 9) || m_board.tiles[pos.x + (int)s][pos.y] != board::tile::empty){
             colition = true;
             break;

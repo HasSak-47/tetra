@@ -46,45 +46,54 @@ public:
     complex(T x, T y) : vec2<T>(x, y){}
 
     complex(const complex<T>& other) : vec2<T>(other){}
-    complex(complex<T>&& other) : vec2<T>(other) {}
-    complex& operator=(const complex<T>& other) {
+    complex(complex<T>&& other) : vec2<T>(std::move(other)) {}
+
+    complex(const vec2<T>& other) : vec2<T>(other){}
+    complex(vec2<T>&& other) : vec2<T>(std::move(other)) {}
+
+    complex<T>& operator=(const complex<T>& other) {
         if(this == &other) return *this;
-        (*this) = other;
+        (*this).x = other.x;
+        (*this).y = other.y;
 
         return *this;
     }
-    complex& operator=(complex<T>&& other) {
+    complex<T>& operator=(complex<T>&& other) {
         if(this == &other) return *this;
-        (*this) = other;
+        (*this).x = std::move(other.x);
+        (*this).y = std::move(other.y);
+
 
         return *this;
     }
 
-    complex& operator+=(const complex<T>& other){
+    complex<T>& operator+=(const complex<T>& other){
         this->x = other.x + this->x;
         this->y = other.y + this->y;
         return *this;
     }    
-    complex& operator-=(const complex<T>& other){
+    complex<T>& operator-=(const complex<T>& other){
         this->x = other.x - this->x;
         this->y = other.y - this->y;
         return *this;
     }
 
-    complex& operator*=(const complex<T>& other){
+    complex<T>& operator*=(const complex<T>& other){
         return *this = complex<T>(
             (other.x * this->x) - (other.y * this->y),
             (other.x * this->y) + (other.y * this->x)
         );
     }
-    complex& operator/=(const complex<T>& other){
+    complex<T>& operator/=(const complex<T>& other){
         return *this;
     }
 
-    complex operator+(const complex<T>& other);
-    complex operator*(const complex<T>& other);
-    complex operator-(const complex<T>& other);
-    complex operator/(const complex<T>& other);
+    complex<T> operator+(const complex<T>& other) const {
+        return {other.x + this->x, other.y + this->y};
+    }
+    complex<T> operator*(const complex<T>& other) const;
+    complex<T> operator-(const complex<T>& other) const;
+    complex<T> operator/(const complex<T>& other) const;
 };
 
 typedef vec2<int>   vec2i;
@@ -93,8 +102,8 @@ typedef vec2<float> vec2f;
 template class vec2<int>;
 template class vec2<float>;
 
-typedef vec2<int>   complexi;
-typedef vec2<float> complexf;
+typedef complex<int>   complexi;
+typedef complex<float> complexf;
 
 template class complex<int>;
 template class complex<float>;

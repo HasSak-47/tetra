@@ -13,7 +13,8 @@ protected:
     vec2i pieces[4] = {};
     vec2i padding = {};
     board& m_board;
-    size_t piece_t = {};
+    size_t m_color = {};
+    complexf axis = {};
 
 public:
     void act() override;
@@ -35,9 +36,12 @@ public:
         int x4, int y4,
 
         int cx, int cy,
+        size_t type,
 
-        size_t type
+        float ax = 0.0f, float ay = 0.0f
     );
+
+    piece(board& b, std::string file_path);
 
     piece(const piece& other);
     piece(piece&& other);

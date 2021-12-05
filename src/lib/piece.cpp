@@ -14,6 +14,51 @@ color piece_color[] = {
     {0xff, 0xff, 0xff}  //white
 };
 
+
+std::mutex gen_mutex;
+
+static size_t uses = 0;
+static size_t order[7] = {};
+
+static std::default_random_engine generator;
+static std::uniform_int_distribution<size_t> distribution(0,6);
+
+static void generate_orders(size_t order[6]){
+    for(size_t i = 0; i < 6; ++i){
+        bool unique = true;
+        do{
+            unique = true;
+            order[i] = distribution(generator);
+            for(size_t j = 0; j < i; ++j){
+                if(order[i] == order[j]) {
+                    unique = false;
+                    break;
+                }
+            } 
+            if(!unique) continue;
+        }while(!unique);
+    }
+}
+
+void generate_piece_queue(){
+    generate_orders(order);
+    while(!end_game){
+        std::lock_guard<std::mutex> lock(gen_mutex);
+
+        if(uses > 6){
+            generate_orders(order);
+            uses = 0;
+        }
+        else continue;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+}
+
+size_t get_next(){
+    std::lock_guard<std::mutex> lock(gen_mutex);
+    return order[uses++];
+}
+
 void piece::act(){
     std::cout << "act thread: " << std::this_thread::get_id() << '\n';
     bool cont = true;
@@ -43,6 +88,7 @@ void piece::act(){
                 move_side(side::right);
                 break;
             case SDLK_UP:
+                std::cout << "rotating\n";
                 rotate();
                 break;
             default:
@@ -60,7 +106,7 @@ void piece::act(){
 
 void piece::loop(){
     set_padding();
-    *this = tetros[0];
+    *this = tetros[get_next()];
 
     uint32_t start = SDL_GetTicks(), end = SDL_GetTicks();
 
@@ -113,7 +159,8 @@ piece& piece::operator=(const piece& other){
     this->c.a = other.c.a;
 
     this->board_pos = other.board_pos;
-    this->piece_t = other.piece_t;
+    this->m_color = other.m_color;
+    this->axis = other.axis;
 
     return *this;
 }

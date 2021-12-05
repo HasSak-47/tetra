@@ -16,12 +16,14 @@ the project is divided into several classes:
             complex.h
             piece.h
             renderer.h
+            rect.h
             unique_vector.h
-
         lib
+            board_piece.cpp
             board.cpp
             main.cpp
             piece.cpp
+            rect.cpp
             renderee.cpp
             renderer.cpp
 

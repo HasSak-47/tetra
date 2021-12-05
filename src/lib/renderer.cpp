@@ -13,7 +13,8 @@ renderer::renderer(const char* name, int width, int height):
     m_dimention(width, height),
     m_unit(set_unit(m_dimention)),
     m_unit_dimention(24 , 18)
-    {}
+    {
+}
 
 renderer::~renderer() {}
 
@@ -39,6 +40,13 @@ renderer& renderer::operator=(renderer&& other) {
 }
 
 void renderer::render() {
+    std::ostringstream sstr;
+    std::cout << "render thread: " << std::this_thread::get_id() << '\n';
+    {
+        std::lock_guard<std::mutex> lock(render_mutex);
+        rendering = true;
+        this->ended_render.notify_all();
+    }
     while(!m_close){
         //in this part it locks the render_mutex and starts rendering the scene
         //since lock_guard only unlocks when unscoped I created this
@@ -47,6 +55,7 @@ void renderer::render() {
             std::lock_guard<std::mutex> lock(render_mutex);
             rendering = true;
             this->ended_render.notify_all();
+
         }
         //this is the start time of the rendering process
 
@@ -79,10 +88,9 @@ void renderer::render() {
             this->ended_render.notify_all();
         }
 
-        SDL_Event close_event = m_event;
-        while(close_event.type != SDL_QUIT && SDL_GetTicks() - start < 30){
-            SDL_PollEvent(&close_event);
-            if(close_event.type == SDL_QUIT){
+        while(m_event.type != SDL_QUIT && SDL_GetTicks() - start < 16){
+            SDL_PollEvent(&m_event);
+            if(m_event.type == SDL_QUIT){
                 end_game = true; //set that the game ended 
                 m_close = true; //set that the window can close
 
@@ -101,7 +109,8 @@ bool renderer::should_close(){
 }
 
 SDL_Event renderer::get_event(){
-    return m_event;
+//    SDL_PollEvent(&m_event);
+    return this->m_event;
 }
 
 vec2i renderer::get_dimentions(){
@@ -119,4 +128,13 @@ vec2i renderer::get_unit(){
 
 SDL_Renderer* renderer::get_renderer(){
     return m_ren.get();
+}
+
+void renderer::wait_for_render(){
+    //std::ostringstream sstr;
+    //sstr << "thread: " << std::this_thread::get_id() << " waiting for render\n";
+    //dout.print(sstr);
+    std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
+    ren.ended_render.wait(ren_lock, []{return !ren.rendering || end_game;});
+
 }

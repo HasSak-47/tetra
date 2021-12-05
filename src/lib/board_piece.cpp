@@ -5,9 +5,8 @@
 #include <random>
 #include <future>
 
-piece tetros[] = {
-    {
-        playfield, 
+const piece tetros[] = {{
+        playfield, // I shape
         -1, 1,
          0, 1,
          1, 1,
@@ -15,85 +14,75 @@ piece tetros[] = {
 
          4, 14,
         0
-    },
-
-    {
-        playfield, 
+    },{
+        playfield, // o shape
          0, 0,
          1, 0,
          0, 1,
          1, 1,
 
-         4, 14,
-        0
-    },
-
-    {
-        playfield, 
+         3, 14,
+        1
+    },{
+        playfield, //s shape
         -1, 0,
          0, 0,
+         0, 1,
+         1, 1,
+
+         4, 14,
+        2
+    },{
+        playfield, //z shape
+        -1, 1,
+         0, 0,
+         0, 1,
          1, 0,
-         0, 1,
-
          4, 14,
-        0
-    },
-
-    {
-        playfield, 
-        -1, 1,
+        3
+    },{
+        playfield,  //j shape
+        -1, 0,
+         0, 0,
          0, 1,
+         0, 2,
+         4, 13,
+        4
+    },{
+        playfield, //l shape
+         0, 0,
+         0, 1,
+         0, 2,
+         1, 0,
+         4, 13,
+        5
+    },{
+        playfield, //t shape
+         0, 0,
+         1, 0,
+         2, 0,
          1, 1,
-         2, 1,
          4, 14,
-        0
-    },
-
-        {
-        playfield, 
-        -1, 1,
-         0, 1,
-         1, 1,
-         2, 1,
-         4, 14,
-        0
-    },
-
-        {
-        playfield, 
-        -1, 1,
-         0, 1,
-         1, 1,
-         2, 1,
-         4, 14,
-        0
-    },
-
-        {
-        playfield, 
-        -1, 1,
-         0, 1,
-         1, 1,
-         2, 1,
-         4, 14,
-        0
+        6
     }
 };
 
 static std::default_random_engine generator;
 static std::uniform_int_distribution<size_t> distribution(0,6);
 
-static std::future<size_t> next_piece;
-static std::promise<size_t> next_p;
-
-static piece& first = tetros[0];
-
 static void generate_orders(size_t order[6]){
     for(size_t i = 0; i < 6; ++i){
         bool unique = true;
         do{
+            unique = true;
             order[i] = distribution(generator);
-            for(size_t j = 0; j < i; ++j) if(order[i] == order[j]) unique = false;
+            for(size_t j = 0; j < i; ++j){
+                if(order[i] == order[j]) {
+                    unique = false;
+                    break;
+                }
+            } 
+            if(!unique) continue;
         }while(!unique);
     }
 }
@@ -101,30 +90,25 @@ static void generate_orders(size_t order[6]){
 std::mutex gen_mutex;
 
 static size_t uses = 0;
-static size_t current = 0;
-static size_t order[6] = {};
+static size_t order[7] = {};
+
 void generate_piece_queue(){
-
-    next_piece = next_p.get_future();
-
     generate_orders(order);
     while(!end_game){
         std::lock_guard<std::mutex> lock(gen_mutex);
 
-        if(uses > 6){
+        if(uses > 7){
             generate_orders(order);
             uses = 0;
         }
-
-       next_p.set_value(order[uses]);
+        else continue;
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
 }
 
 size_t get_next(){
     std::lock_guard<std::mutex> lock(gen_mutex);
-    uses++;
-
-    return next_piece.get();
+    return order[uses++];
 }
 
 piece::piece(
@@ -147,18 +131,18 @@ piece::piece(
         {x3, y3},
         {x4, y4},
     },
-    padding{b.get_padding().x + b.get_padding().y}
+    padding(b.get_padding()),
+    piece_t(type)
 {
-    generator = std::minstd_rand0(std::chrono::system_clock::now().time_since_epoch().count());
     should_render = false;
 }
 
 piece::piece() : 
-    m_board(first.m_board),
-    renderee(0, 0, piece_color[first.piece_t]),
-    board_pos(first.board_pos),
-    pieces(first.pieces),
-    padding{first.padding.x, first.padding.y} {
+    m_board(tetros[0].m_board),
+    renderee(0, 0, piece_color[tetros[0].piece_t]),
+    board_pos(tetros[0].board_pos),
+    pieces(tetros[0].pieces),
+    padding(tetros[0].padding) {
     should_render = true;
 }
 
@@ -188,18 +172,29 @@ void piece::rotate() {
 }
 
 void piece::move_down() {
-    std::lock_guard<std::mutex> piece_lock(this->piece_mutex);
     if(m_board.evaluate_next(*this)){
         board_pos.y--;
     }
     else{
-        *this = tetros[0];
+        *this = tetros[get_next()];
+        if(m_board.tiles[4][15] != board::tile::empty) 
+            end_game = true;
     }
 
 }
 
 void piece::move_side(side s) {
-
+    bool colition = false;
+    for(auto& pc : pieces){
+        vec2i pos = {pc.x + board_pos.x, pc.y + board_pos.y};
+        //std::cout << "colition : " << pos.x << " : " <<  (((s == side::left)? 0 : 15)) << " : " << (m_board.tiles[pc.x + (int)s][pc.y] != board::tile::empty) << '\n';
+        if(pos.x == ((s == side::left)? 0 : 9) || m_board.tiles[pos.x + (int)s][pos.y] != board::tile::empty){
+            colition = true;
+            break;
+        }
+    }
+    if(colition) return;
+    this->board_pos.x += (int)s;
 }
 
 void piece::drop() {
@@ -208,4 +203,27 @@ void piece::drop() {
 
 void piece::set_padding(){
     this->padding = m_board.get_padding();
+}
+
+void board::set_rectangles(){
+    auto unit = ren.get_unit();
+
+    for(size_t i = 0; i < 7; ++i){
+        parts[i].m_rects.clear();
+    }
+
+    for(size_t i = 0; i < 10; ++i)
+    for(size_t j = 0; j < 16; ++j){
+        if(tiles[i][j] == tile::empty) continue;
+        size_t id = static_cast<size_t>(tiles[i][j]) - 1;
+
+        std::unique_ptr<SDL_Rect> rc(new SDL_Rect {
+            padding.x + (unit.x * (int)i),
+            padding.y + (unit.y * (15 - (int)j)),
+            unit.x,
+            unit.y
+        });
+
+        parts[id].m_rects.push_back( std::move(rc) );
+    }
 }

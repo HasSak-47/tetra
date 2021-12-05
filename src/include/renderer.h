@@ -5,10 +5,9 @@
 #include <iostream>
 
 #include <condition_variable>
+#include <future>
 #include <memory>
 #include <vector>
-#include <array>
-
 
 #include <SDL.h>
 
@@ -34,16 +33,10 @@ extern std::array<const color* const, 6> colors;
 
 class renderer{
 private:
-    //pointer to the window of the renderer
     std::unique_ptr<SDL_Window, void (*)(SDL_Window*)> m_win;
-
-    //pointer to the renderer
     std::unique_ptr<SDL_Renderer, void (*)(SDL_Renderer*)> m_ren;
-
-    //last event polled
     SDL_Event m_event = {};
 
-    //should the window close
     bool m_close = false;
 
     //height and width
@@ -56,12 +49,11 @@ private:
     vec2i m_unit = {0, 0};
 
     uint32_t delta_time = 0;
-
 public:
     std::condition_variable ended_render;
     std::mutex render_mutex;
 
-    bool rendering = false;
+    bool rendering = true;
     
     renderer();
     renderer(const char* name, int width, int height);
@@ -70,12 +62,9 @@ public:
     renderer(renderer&& other);
     renderer& operator=(renderer&& other);
 
-    //renderer& operator=(const renderer& other);
     renderer(const renderer& other) = delete;
 
-    //it renders a frame and tells the time it took
     void render();
-    //to measure when the frame got rendered, when it ended, and how much it took
     bool should_close();
 
     SDL_Event get_event();
@@ -87,6 +76,8 @@ public:
 
     //all the objects that will be rendered in the order
     std::vector<renderee*> renderees;
+
+    void wait_for_render();
 };
 
 class renderee{
@@ -121,8 +112,10 @@ public:
 
 class interact{
 protected:
-    SDL_KeyboardEvent event = {};
+    renderer* m_rend;
 public:
+    void set_renderer(renderer* rend);
+
     virtual void act();
 };
 

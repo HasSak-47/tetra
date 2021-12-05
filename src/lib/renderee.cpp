@@ -74,3 +74,7 @@ void renderee::set_pos(float x, float y){
 }
 
 void interact::act(){}
+
+void interact::set_renderer(renderer* rend){
+    this->m_rend = rend;
+}

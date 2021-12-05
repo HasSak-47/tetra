@@ -4,10 +4,9 @@
 #include <renderer.h>
 #include <complex.h>
 
-class piece : public renderee, protected interact{
+class piece : public renderee, public interact{
 protected:
     void set_rectangles() override;
-    void act() override;
     void set_padding();
 
     vec2i board_pos = {4, 15};
@@ -17,6 +16,8 @@ protected:
     size_t piece_t = {};
 
 public:
+    void act() override;
+
     enum class side{
         left = -1, right = 1
     };
@@ -58,6 +59,6 @@ size_t get_next();
 extern piece falling;
 extern piece next;
 extern piece saved;
-extern piece tetros[];
+extern const piece tetros[];
 
 #endif

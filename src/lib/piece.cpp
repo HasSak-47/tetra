@@ -5,48 +5,57 @@
 int piece::speed = 250;
 
 color piece_color[] = {
-    {0x55, 0x55, 0xff},
-    {0x55, 0xff, 0x55},
-    {0xff, 0xff, 0xff},
-    {0xff, 0x55, 0x55},
-    {0xff, 0x55, 0xff},
-    {0xff, 0xff, 0x55},
-    {0xff, 0xff, 0xff}
+    {0x55, 0x55, 0xff}, //blue
+    {0x55, 0xff, 0x55}, //green
+    {0x55, 0xff, 0xff}, //cyan
+    {0xff, 0x55, 0x55}, //red
+    {0xff, 0x55, 0xff}, //purple
+    {0xff, 0xff, 0x55}, //yellow
+    {0xff, 0xff, 0xff}  //white
 };
 
 void piece::act(){
-    bool acted = false;
+    std::cout << "act thread: " << std::this_thread::get_id() << '\n';
+    std::ostringstream sstr;
+    bool cont = true;
+    uint32_t start = 0;
+    SDL_Keycode prev;
     while(!end_game){
-        {
-            std::lock_guard<std::mutex> lock(this->piece_mutex);
-            this->event = ren.get_event().key;
+        if(m_rend->get_event().type == SDL_KEYDOWN && (cont || prev != m_rend->get_event().key.keysym.sym)){
+            std::lock_guard<std::mutex> piece_lock(this->piece_mutex);
+            start = SDL_GetTicks();
 
-            if(this->event.type == SDL_KEYUP) continue;
+            //sstr << "pressed key\n";
+            //dout.print(sstr);
 
-            switch (this->event.keysym.sym){
+            prev = m_rend->get_event().key.keysym.sym;
+            switch (m_rend->get_event().key.keysym.sym){
             case SDLK_DOWN:
                 move_down();
-                acted = true;
                 break;
 
             case SDLK_SPACE:
                 drop();
-                acted = true;
                 break;
             case SDLK_LEFT:
                 move_side(side::left);
-                acted = true;
+                break;
+            case SDLK_RIGHT:
+                move_side(side::right);
+                break;
             case SDLK_UP:
                 rotate();
-                acted = true;
                 break;
             default:
                 break;
             }
 
-        }   
-        if(acted) std::this_thread::sleep_for(std::chrono::milliseconds(this->speed / 4));
-
+            cont = false;
+        }
+        else 
+        if(m_rend->get_event().type == SDL_KEYUP){
+            cont = true;
+        }
     }
 }
 
@@ -56,15 +65,16 @@ void piece::loop(){
 
     uint32_t start = SDL_GetTicks(), end = SDL_GetTicks();
 
+    std::cout << "loop thread: " << std::this_thread::get_id() << '\n';
+
     while(!end_game){
         {
-            std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
-            ren.ended_render.wait(ren_lock, []{return !ren.rendering || end_game;});
+            this->m_rend->wait_for_render();
             end = SDL_GetTicks();
             if(end - start < speed) continue;
             start = end;
 
-            ren_lock.unlock();
+            std::lock_guard<std::mutex> piece_lock(this->piece_mutex);
             move_down();
         }
         std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
@@ -98,6 +108,10 @@ piece& piece::operator=(const piece& other){
     for(size_t i = 0; i < 4; ++i){
         this->pieces[i] = other.pieces[i];
     }
+    this->c.r = other.c.r;
+    this->c.g = other.c.g;
+    this->c.b = other.c.b;
+    this->c.a = other.c.a;
 
     this->board_pos = other.board_pos;
     this->piece_t = other.piece_t;

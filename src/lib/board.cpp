@@ -26,6 +26,31 @@ placed::placed(color c) : renderee(c){
 
 }
 
+
+void board::set_rectangles(){
+    vec2i unit = ren.get_unit();
+
+    //this     
+    for(size_t i = 0; i < 7; ++i){
+        parts[i].m_rects.clear();
+    }
+
+    for(size_t i = 0; i < 10; ++i)
+    for(size_t j = 0; j < 16; ++j){
+        if(tiles[i][j] == tile::empty) continue;
+        size_t id = static_cast<size_t>(tiles[i][j]) - 1;
+
+        std::unique_ptr<SDL_Rect> rc(new SDL_Rect {
+            padding.x + (unit.x * (int)i),
+            padding.y + (unit.y * (15 - (int)j)),
+            unit.x,
+            unit.y
+        });
+
+        parts[id].m_rects.push_back( std::move(rc) );
+    }
+}
+
 void placed::set_rectangles(){
     if(m_rects.size() == 0) return;
 }

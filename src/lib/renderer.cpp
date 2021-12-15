@@ -41,6 +41,7 @@ renderer& renderer::operator=(renderer&& other) {
 
 void renderer::render() {
     std::cout << "render thread: " << std::this_thread::get_id() << '\n';
+    ended = promise_end.get_future();
     {
         std::lock_guard<std::mutex> lock(render_mutex);
         rendering = true;
@@ -92,16 +93,18 @@ void renderer::render() {
             if(m_event.type == SDL_QUIT){
                 end_game = true; //set that the game ended 
                 m_close = true; //set that the window can close
-
-                std::cout << "Closing rendered window\n";
-                rendering = false;
-                this->ended_render.notify_all();
-            
-                return;
             }
         }
     }
-};
+
+
+    std::cout << "setting value\n";
+    promise_end.set_value(true);
+
+    std::cout << "Closing rendered window\n";
+    rendering = false;
+    this->ended_render.notify_all();
+}
 
 bool renderer::should_close(){
     return m_event.type == SDL_QUIT;
@@ -130,9 +133,6 @@ SDL_Renderer* renderer::get_renderer(){
 }
 
 void renderer::wait_for_render(){
-    //std::ostringstream sstr;
-    //sstr << "thread: " << std::this_thread::get_id() << " waiting for render\n";
-    //dout.print(sstr);
     std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
     ren.ended_render.wait(ren_lock, []{return !ren.rendering || end_game;});
 

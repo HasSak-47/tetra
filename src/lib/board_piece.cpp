@@ -6,18 +6,13 @@
 #include <future>
 #include <fstream>
 #include <algorithm>
+#include <sstream>
 
 #include <cmath>
 
 const piece tetros[] = {{
         playfield, // I shape
-        -1, 1,
-         0, 1,
-         1, 1,
-         2, 1,
-         4, 14,
-        0,
-        -0.5f, -0.5f
+        "../data/piece/I_piece"
     },{
         playfield, // o shape
          0, 0,
@@ -84,35 +79,45 @@ piece::piece(
 ) : 
     m_board(b),
     renderee(0, 0, piece_color[type]),
-    board_pos{cx, cy},
-    pieces{ 
-        {x1, y1},
-        {x2, y2},
-        {x3, y3},
-        {x4, y4},
+    piece_data {
+        vec2i(x1, y1),
+        vec2i(x2, y2),
+        vec2i(x3, y3),
+        vec2i(x4, y4),
+        type
     },
+    board_pos{cx, cy},
     padding(b.get_padding()),
-    m_color(type),
     axis{ax, ay}
 {
     should_render = false;
 }
 
 piece::piece(board& b, std::string path) : 
-    m_board(b){
+    m_board(b),
+    renderee(0, 0){
     std::ifstream in_file(path);
-    
-}
 
-piece::piece() : 
-    m_board(tetros[0].m_board),
-    renderee(0, 0, piece_color[tetros[0].m_color]),
-    board_pos(tetros[0].board_pos),
-    pieces(tetros[0].pieces),
-    padding(tetros[0].padding) {
-    should_render = true;
-}
+    std::stringstream lines[7] = {};
+    size_t index = 0;
+    for(size_t i = 0; i < 10; ++i){
+        std::string line = {};
+        getline(in_file, line);
+        if(line.size() == 0) continue;
+        lines[index++] << line;
+    }
 
+    for(size_t i = 0; i < 4; ++i){
+        lines[i] >> pieces[i].x >> pieces[i].y;
+    }
+
+    lines[4] >> board_pos.x >> board_pos.y;
+    lines[5] >> type;
+    c = piece_color[type];
+
+    lines[6] >> axis.x >> axis.y;
+    should_render = false;
+}
 
 bool board::evaluate_next(piece& p){
     bool free = true;
@@ -125,66 +130,106 @@ bool board::evaluate_next(piece& p){
     }
 
     if(!free){
+        score += p.board_pos.y + 1;
         for(auto& pc : p.pieces){
             vec2i pos = {p.board_pos.x + pc.x, p.board_pos.y + pc.y};
-            tiles[pos.x][pos.y] = static_cast<tile>(p.m_color + 1) ;
+            tiles[pos.x][pos.y] = static_cast<tile>(p.type + 1) ;
+        }
+
+
+        size_t cleared_lines = 0;
+        std::vector<size_t> lines_to_delete;
+        for(size_t j = 0; j < 16; ++j){
+            bool complete = true;
+            for(size_t i = 0; i < 10; ++i){
+                if(tiles[i][j] == tile::empty){
+                    complete = false;
+                    break;
+                }
+            }
+
+            if(complete) {
+                lines_to_delete.push_back(j);
+                cleared_lines++;
+            }
+        }
+        if(cleared_lines > 0) {
+            score += ((cleared_lines * cleared_lines + 1) / 2) * 100;
+            std::reverse(lines_to_delete.begin(), lines_to_delete.end());
+
+            size_t line = 0;
+            tile tiles_copy[10][16] = {};
+            for(size_t i = 0; i < 16; ++i){
+                if(i == lines_to_delete.back()) {
+                    lines_to_delete.pop_back();
+                    continue;
+                }
+                for(size_t j = 0; j < 10; ++j)
+                    tiles_copy[j][line] = tiles[j][i];
+
+                line++;
+            }
+
+            for(size_t i = 0; i < 10; ++i) {
+                for(size_t j = 0; j < 16; ++j){
+                    tiles[i][j] = tiles_copy[i][j];
+                }
+            }
         }
     }
-
-    
 
     return free;
 }
 
 static const complexf rotator = {0, -1};
-
-
-
 void piece::rotate() {
-    if(this->m_color == 1) return; 
-
-    piece copy = *this;
+    if(this->type == 1) return; 
 
     vec2i max = {}, min = {};
-    for(auto& pc : pieces){
+    vec2i rot_pieces[4] = {};
+    
+    for(size_t i = 0; i < 4; ++i)
+        rot_pieces[i] = this->pieces[i];
+
+    vec2i new_center = board_pos;
+
+    for(auto& pc : rot_pieces){
         complexf data = complexf(pc.x,pc.y) + axis;
         data *= rotator;
         data.x = ceil(data.x); data.y = ceil(data.y);
 
         pc = {(int)data.x, (int)data.y};
 
-        if(pc.x + board_pos.x> max.x) max.x = pc.x + board_pos.x; 
-        else if(pc.x + board_pos.x < min.x) min.x = pc.x + board_pos.x;
+        if(pc.x + new_center.x > max.x) max.x = pc.x + new_center.x; 
+        else if(pc.x + new_center.x < min.x) min.x = pc.x + new_center.x;
 
-        if(pc.y > max.y + board_pos.y) max.y = pc.y + board_pos.y; 
-        else if(pc.y < min.y + board_pos.y) min.y = pc.y + board_pos.y; 
+        if(pc.y + new_center.y > max.y) max.y = pc.y + new_center.y; 
+        else if(pc.y < min.y + new_center.y) min.y = pc.y + new_center.y; 
     }
-    if(max.x > 9) board_pos.x -= max.x - 9;
-    if(min.x < 0) board_pos.x -= min.x;
 
-    if(max.y > 15) board_pos.y -= max.y - 15;
-    if(min.y < 0) board_pos.y -= min.y;
+    if(max.x > 9) new_center.x -= max.x - 9;
+    else if(min.x < 0) new_center.x -= min.x;
 
-    /*
-    for(auto& pc : pieces){
-        vec2i pos = {pc.x + board_pos.x, pc.y + board_pos.y};
+    if(max.y > 15) new_center.y -= max.y - 15;
+    else if(min.y < 0) new_center.y -= min.y;
 
-        if(this->m_board.tiles[pos.x][pos.y] != board::tile::empty){
-
-        }
+    for(vec2i& pc : rot_pieces){
+        vec2i pos = {pc.x + new_center.x, pc.y + new_center.y};
+        if(m_board.tiles[pos.x][pos.y] != board::tile::empty)
+            return;
     }
-    */
+
+    board_pos = new_center;
+    for(size_t i = 0; i < 4; ++i){
+        this->pieces[i] = rot_pieces[i];
+    }
 }
 
 void piece::move_down() {
-    if(m_board.evaluate_next(*this)){
-        board_pos.y--;
-    }
-    else{
+    if(m_board.evaluate_next(*this))
+        --board_pos.y;
+    else
         *this = tetros[get_next()];
-        if(m_board.tiles[4][15] != board::tile::empty) 
-            end_game = true;
-    }
 
 }
 
@@ -207,27 +252,4 @@ void piece::drop() {
 
 void piece::set_padding(){
     this->padding = m_board.get_padding();
-}
-
-void board::set_rectangles(){
-    auto unit = ren.get_unit();
-
-    for(size_t i = 0; i < 7; ++i){
-        parts[i].m_rects.clear();
-    }
-
-    for(size_t i = 0; i < 10; ++i)
-    for(size_t j = 0; j < 16; ++j){
-        if(tiles[i][j] == tile::empty) continue;
-        size_t id = static_cast<size_t>(tiles[i][j]) - 1;
-
-        std::unique_ptr<SDL_Rect> rc(new SDL_Rect {
-            padding.x + (unit.x * (int)i),
-            padding.y + (unit.y * (15 - (int)j)),
-            unit.x,
-            unit.y
-        });
-
-        parts[id].m_rects.push_back( std::move(rc) );
-    }
 }

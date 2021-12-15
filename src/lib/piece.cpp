@@ -1,6 +1,7 @@
 #include <piece.h>
 #include <random>
 #include <thread>
+#include <ctime>
 
 int piece::speed = 250;
 
@@ -13,7 +14,6 @@ color piece_color[] = {
     {0xff, 0xff, 0x55}, //yellow
     {0xff, 0xff, 0xff}  //white
 };
-
 
 std::mutex gen_mutex;
 
@@ -42,6 +42,7 @@ static void generate_orders(size_t order[6]){
 
 void generate_piece_queue(){
     generate_orders(order);
+    generator = std::minstd_rand0(static_cast<unsigned long>(time(0)));
     while(!end_game){
         std::lock_guard<std::mutex> lock(gen_mutex);
 
@@ -69,9 +70,6 @@ void piece::act(){
             std::lock_guard<std::mutex> piece_lock(this->piece_mutex);
             start = SDL_GetTicks();
 
-            //sstr << "pressed key\n";
-            //dout.print(sstr);
-
             prev = m_rend->get_event().key.keysym.sym;
             switch (m_rend->get_event().key.keysym.sym){
             case SDLK_DOWN:
@@ -88,7 +86,6 @@ void piece::act(){
                 move_side(side::right);
                 break;
             case SDLK_UP:
-                std::cout << "rotating\n";
                 rotate();
                 break;
             default:
@@ -159,8 +156,22 @@ piece& piece::operator=(const piece& other){
     this->c.a = other.c.a;
 
     this->board_pos = other.board_pos;
-    this->m_color = other.m_color;
+    this->type = other.type;
     this->axis = other.axis;
 
     return *this;
+}
+
+piece::piece() : 
+    m_board(tetros[0].m_board),
+    renderee(0, 0, piece_color[tetros[0].type]),
+    board_pos(),
+    piece_data(),
+    padding() {
+    should_render = true;
+}
+
+piece::piece(const piece& other) : 
+    m_board(other.m_board){
+    *this = other;
 }

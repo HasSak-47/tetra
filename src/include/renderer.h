@@ -29,12 +29,11 @@ class board;
 class piece;
 class rect;
 
-extern std::array<const color* const, 6> colors;
-
 class renderer{
 private:
     std::unique_ptr<SDL_Window, void (*)(SDL_Window*)> m_win;
     std::unique_ptr<SDL_Renderer, void (*)(SDL_Renderer*)> m_ren;
+    std::promise<bool> promise_end;
     SDL_Event m_event = {};
 
     bool m_close = false;
@@ -50,6 +49,7 @@ private:
 
     uint32_t delta_time = 0;
 public:
+    std::future<bool> ended;
     std::condition_variable ended_render;
     std::mutex render_mutex;
 
@@ -122,5 +122,6 @@ public:
 extern renderer ren;
 extern bool end_game;
 extern color piece_color[];
+extern unsigned score;
 
 #endif

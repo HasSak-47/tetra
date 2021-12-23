@@ -14,34 +14,13 @@ renderer::renderer(const char* name, int width, int height):
     m_unit(set_unit(m_dimention)),
     m_unit_dimention(24 , 18)
     {
+    ended = promise_end.get_future();
 }
 
 renderer::~renderer() {}
 
-renderer::renderer(renderer&& other) :
-    m_win(std::move(other.m_win)),
-    m_ren(std::move(other.m_ren)),
-    m_event(std::move(other.m_event)),
-    m_dimention (std::move(other.m_dimention)),
-    m_unit(std::move(other.m_unit))
-    {}
-
-renderer& renderer::operator=(renderer&& other) {
-    if(this == &other) return *this;
-
-    m_win       = ( std::move(other.m_win) );
-    m_ren       = ( std::move(other.m_ren) );
-    m_close     = ( std::move(other.m_close) );
-    m_event     = ( std::move(other.m_event) );
-    m_dimention = ( std::move(other.m_dimention) );
-    m_unit      = ( std::move(other.m_unit) );
-
-    return *this;
-}
-
 void renderer::render() {
     std::cout << "render thread: " << std::this_thread::get_id() << '\n';
-    ended = promise_end.get_future();
     {
         std::lock_guard<std::mutex> lock(render_mutex);
         rendering = true;
@@ -135,5 +114,4 @@ SDL_Renderer* renderer::get_renderer(){
 void renderer::wait_for_render(){
     std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
     ren.ended_render.wait(ren_lock, []{return !ren.rendering || end_game;});
-
 }

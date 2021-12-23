@@ -26,11 +26,9 @@ placed::placed(color c) : renderee(c){
 
 }
 
-
 void board::set_rectangles(){
     vec2i unit = ren.get_unit();
-
-    //this     
+    
     for(size_t i = 0; i < 7; ++i){
         parts[i].m_rects.clear();
     }
@@ -49,6 +47,10 @@ void board::set_rectangles(){
 
         parts[id].m_rects.push_back( std::move(rc) );
     }
+}
+
+board::tile& board::operator[](vec2i coords){
+    return tiles[coords.x][coords.y];
 }
 
 void placed::set_rectangles(){

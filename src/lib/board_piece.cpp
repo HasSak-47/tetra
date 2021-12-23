@@ -15,86 +15,27 @@ const piece tetros[] = {{
         "../data/piece/I_piece"
     },{
         playfield, // o shape
-         0, 0,
-         1, 0,
-         0, 1,
-         1, 1,
-         3, 14,
-        1,
-         -0.5f, -0.5f
+        "../data/piece/O_piece"
     },{
         playfield, //s shape
-        -1, 0,
-         0, 0,
-         0, 1,
-         1, 1,
-         4, 14,
-        2
+        "../data/piece/S_piece"
     },{
         playfield, //z shape
-        -1, 1,
-         0, 0,
-         0, 1,
-         1, 0,
-         4, 14,
-        3
+        "../data/piece/Z_piece"
     },{
-        playfield,  //j shape
-        -1, 0,
-         0, 0,
-         0, 1,
-         0, 2,
-         4, 13,
-        4
+        playfield, //j shape
+        "../data/piece/J_piece"
     },{
         playfield, //l shape
-         0, 0,
-         0, 1,
-         0, 2,
-         1, 0,
-         4, 13,
-        5
+        "../data/piece/L_piece"
     },{
         playfield, //t shape
-         0, 0,
-         1, 0,
-         2, 0,
-         1, 1,
-         4, 14,
-        6
+        "../data/piece/T_piece"
     }
 };
 
-piece::piece(
-    board& b,
-    int x1, int y1,
-    int x2, int y2,
-    int x3, int y3,
-    int x4, int y4,
-
-    int cx, int cy,
-
-    size_t type,
-    float ax, float ay
-) : 
-    m_board(b),
-    renderee(0, 0, piece_color[type]),
-    piece_data {
-        vec2i(x1, y1),
-        vec2i(x2, y2),
-        vec2i(x3, y3),
-        vec2i(x4, y4),
-        type
-    },
-    board_pos{cx, cy},
-    padding(b.get_padding()),
-    axis{ax, ay}
-{
-    should_render = false;
-}
-
 piece::piece(board& b, std::string path) : 
-    m_board(b),
+    parent_board(b),
     renderee(0, 0){
     std::ifstream in_file(path);
 
@@ -103,7 +44,6 @@ piece::piece(board& b, std::string path) :
     for(size_t i = 0; i < 10; ++i){
         std::string line = {};
         getline(in_file, line);
-        if(line.size() == 0) continue;
         lines[index++] << line;
     }
 
@@ -133,7 +73,7 @@ bool board::evaluate_next(piece& p){
         score += p.board_pos.y + 1;
         for(auto& pc : p.pieces){
             vec2i pos = {p.board_pos.x + pc.x, p.board_pos.y + pc.y};
-            tiles[pos.x][pos.y] = static_cast<tile>(p.type + 1) ;
+            (*this)[pos] = static_cast<tile>(p.type + 1) ;
         }
 
 
@@ -215,7 +155,7 @@ void piece::rotate() {
 
     for(vec2i& pc : rot_pieces){
         vec2i pos = {pc.x + new_center.x, pc.y + new_center.y};
-        if(m_board.tiles[pos.x][pos.y] != board::tile::empty)
+        if(parent_board[pos] != board::tile::empty)
             return;
     }
 
@@ -226,18 +166,31 @@ void piece::rotate() {
 }
 
 void piece::move_down() {
-    if(m_board.evaluate_next(*this))
+    if(parent_board.evaluate_next(*this))
         --board_pos.y;
-    else
-        *this = tetros[get_next()];
+    else{
+        size_t next_piece = get_next();
+        for(auto& part : tetros[next_piece].pieces){
+            vec2i pos = {
+                part.x + tetros[next_piece].board_pos.x,
+                part.y + tetros[next_piece].board_pos.y
+            };
 
+            if(parent_board[pos] != board::tile::empty){
+                end_game = true;
+                return;
+            }
+        }
+
+        *this = tetros[next_piece];
+    }
 }
 
 void piece::move_side(side s) {
     bool colition = false;
     for(auto& pc : pieces){
         vec2i pos = {pc.x + board_pos.x, pc.y + board_pos.y};
-        if(pos.x == ((s == side::left)? 0 : 9) || m_board.tiles[pos.x + (int)s][pos.y] != board::tile::empty){
+        if(pos.x == ((s == side::left)? 0 : 9) || parent_board.tiles[pos.x + (int)s][pos.y] != board::tile::empty){
             colition = true;
             break;
         }
@@ -246,10 +199,6 @@ void piece::move_side(side s) {
     this->board_pos.x += (int)s;
 }
 
-void piece::drop() {
-
-}
-
 void piece::set_padding(){
-    this->padding = m_board.get_padding();
+    this->padding = parent_board.get_padding();
 }

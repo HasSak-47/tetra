@@ -2,6 +2,7 @@
 #include <sstream>
 #include <fstream>
 #include <thread>
+#include <chrono>
 #include <map>
 
 #include <renderer.h>
@@ -9,10 +10,8 @@
 #include <board.h>
 #include <piece.h>
 
-#include <chrono>
-
 struct name_score{
-    std::string& name;
+    std::string name;
     unsigned& total;
 };
 
@@ -21,15 +20,13 @@ unsigned score = 0;
 renderer ren("test1", 720, 540);
 board playfield(0, 0, 10, 16);
 
-std::string player_name;
-std::stringstream result;
-std::map<std::string, unsigned> scores;
-std::vector<name_score> sc;
+std::vector<name_score> scores;
+std::map<std::string, unsigned> scores_map;
 
 void get_place(){
     bool ended = ren.ended.get();
 
-    std::cout << "I used it!\n";
+    
 }
 
 int main(){
@@ -44,10 +41,12 @@ int main(){
     }
 
     while(!score_file.eof()){
-        std::string name = {};
-        int score_v = {};
-        score_file >> name >> score_v;
-        scores[name] = score_v;
+        std::string name_score;
+        unsigned score_score;
+
+        score_file >> name_score >> score_score;
+        scores_map[name_score] = score_score;
+        scores.push_back({name_score, scores_map[name_score]});
     }
 
     std::cout << "total scores loaded: " << scores.size() << '\n';
@@ -74,12 +73,8 @@ int main(){
         thr.join();
     }
     SDL_Quit();
+    
     std::cout << "ended threads\n";
-
-    std::cout << "please write your name:\n";
-    std::cin >> player_name;
-    std::cout << "player " << player_name << " this was your score: " << score << '\n';
-
     std::cout << "ended program (hopefully) without issues!\n";
     return 0;
 }

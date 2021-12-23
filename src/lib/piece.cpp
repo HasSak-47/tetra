@@ -41,8 +41,10 @@ static void generate_orders(size_t order[6]){
 }
 
 void generate_piece_queue(){
+    size_t seed = time(0);
+    generator = std::minstd_rand0(seed);
     generate_orders(order);
-    generator = std::minstd_rand0(static_cast<unsigned long>(time(0)));
+    std::cout << "seed: "<< seed <<'\n';
     while(!end_game){
         std::lock_guard<std::mutex> lock(gen_mutex);
 
@@ -76,9 +78,6 @@ void piece::act(){
                 move_down();
                 break;
 
-            case SDLK_SPACE:
-                drop();
-                break;
             case SDLK_LEFT:
                 move_side(side::left);
                 break;
@@ -143,7 +142,7 @@ void piece::set_rectangles(){
         this->m_rects.push_back(std::move(ptr));
     }
 }
-
+ 
 piece& piece::operator=(const piece& other){
     if(this == &other) return *this;
 
@@ -163,15 +162,14 @@ piece& piece::operator=(const piece& other){
 }
 
 piece::piece() : 
-    m_board(tetros[0].m_board),
+    parent_board(tetros[0].parent_board),
     renderee(0, 0, piece_color[tetros[0].type]),
     board_pos(),
-    piece_data(),
     padding() {
     should_render = true;
 }
 
 piece::piece(const piece& other) : 
-    m_board(other.m_board){
+    parent_board(other.parent_board){
     *this = other;
 }

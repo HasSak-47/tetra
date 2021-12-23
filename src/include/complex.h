@@ -35,6 +35,11 @@ public:
 };
 
 template<class T>
+inline vec2<T> operator+(vec2<T> a, vec2<T> b){
+    return {a.x + b.x, a.y + b.y };
+}
+
+template<class T>
 class complex : public vec2<T>{
 private:
 protected:

@@ -2,7 +2,6 @@
 
 rect::rect() : 
     rect(0,0,0,0, {0x00, 0x00, 0x00, 0x00}){
-
 }
 
 rect::rect(float x, float y, int w, int h, color col) :
@@ -28,22 +27,7 @@ rect::rect(float x, float y, int w, int h, color col) :
     this->m_rects.push_back(std::move(rec));
 }
 
-rect::rect(rect&& r) : 
-renderee(std::move(r)), size {std::move(r.size)}{
-    
-}
-
 rect::~rect(){}
-
-rect& rect::operator=(rect&& r){
-    if(this == &r) return *this;
-
-    this->m_pos = std::move(r.m_pos);
-    this->size = std::move(r.size);
-
-    return *this;
-}
-
 void rect::set_rectangles(){}
 
 vec2i rect::get_padding(){

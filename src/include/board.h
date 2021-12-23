@@ -19,6 +19,7 @@ public:
 
     tile tiles[10][16] = {};
 
+    tile& operator[](vec2i coords);
     bool evaluate_next(piece& p);
     friend class renderer;
 };

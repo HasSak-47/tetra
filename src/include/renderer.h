@@ -59,9 +59,7 @@ public:
     renderer(const char* name, int width, int height);
     ~renderer();
 
-    renderer(renderer&& other);
-    renderer& operator=(renderer&& other);
-
+    renderer(renderer&& other) = delete;
     renderer(const renderer& other) = delete;
 
     void render();
@@ -97,12 +95,9 @@ public:
     renderee(color col);
     renderee(float x, float y);
     renderee(float x, float y, color col);
-    renderee(unique_vector<SDL_Rect> rects);
-    renderee(unique_vector<SDL_Rect> rects, color col);
 
     renderee(renderee&& other);
-    renderee(renderee& other) = delete;
-    renderee& operator=(renderee&& other);
+    renderee(const renderee& other) = delete;
 
     void set_pos(float x, float y);
 
@@ -119,8 +114,8 @@ public:
     virtual void act();
 };
 
-extern renderer ren;
 extern bool end_game;
+extern renderer ren;
 extern color piece_color[];
 extern unsigned score;
 

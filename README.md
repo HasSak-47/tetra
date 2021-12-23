@@ -1,31 +1,17 @@
 # Tetra
 this is the classical game of tetris made in c++ and using the SDL framework
 
-the project is divided into several classes:
-* complex: this class is used for the use of complex numbers to rotate the pieces
-* renderer: this class renders the windows used for the project
-* renderee: this class is an object that is rendered like a piece or the board
-* interact: this class can read and respond to keyboard inputs
-* board: this is a child of renderee so it could render
-* piece: this is a child of renderee so it could render and a child of interact so it could be moved
-
-## file structure
-    src
-        include
-            board.h
-            complex.h
-            piece.h
-            renderer.h
-            rect.h
-            unique_vector.h
-        lib
-            board_piece.cpp
-            board.cpp
-            main.cpp
-            piece.cpp
-            rect.cpp
-            renderee.cpp
-            renderer.cpp
+## project structure
+### classes 
+  * renderer: renders a window at 60 frames a second
+  * renderee: base class for rendered objects 
+  * rect:     base class for objects made of rectangles that will render
+  * piece:    class that are the tetris pieces
+  * board:    class in which the game is played in
+  * placed:   class that renders all the filled cells of the board
+  * vec2:     base template class for 2 class T objects (x, y)
+  * complex:  template class that behaves like a complex number 
+## 
 
 ## Dependencies for Running Locally
 * cmake >= 3.7
@@ -44,11 +30,10 @@ the project is divided into several classes:
 
 
 ## Building the project:
-    -create folder build
-    -move to folder build in the console
-    -use the command "cmake .."
-    -use the command "make"
+  * create folder build
+  * move to folder build in the console
+  * use the command "cmake .."
+  * use the command "make"
 
 ## Running the project:
-    -use the command ./tetris
-
+  * use the command ./tetris

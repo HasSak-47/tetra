@@ -8,6 +8,8 @@ rect::rect(float x, float y, int w, int h, color col) :
     renderee(x, y, col), size{w, h}, padding(ren.get_unit_dimentions()) {
     vec2i dem = ren.get_dimentions();
     vec2i unit = ren.get_unit(); 
+    //all of this math is to set the center of the rectangle in 0.0f, 0.0f
+    //and then move it to the position x, y
     padding.x -= this->size.x;
     padding.y -= this->size.y;
 

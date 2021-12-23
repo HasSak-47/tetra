@@ -111,6 +111,7 @@ SDL_Renderer* renderer::get_renderer(){
     return m_ren.get();
 }
 
+//uses the renderer mutex to lock all the threads that this method this is called in
 void renderer::wait_for_render(){
     std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
     ren.ended_render.wait(ren_lock, []{return !ren.rendering || end_game;});

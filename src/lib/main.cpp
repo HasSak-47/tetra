@@ -25,7 +25,7 @@ std::map<std::string, unsigned> scores_map;
 
 void get_place(){
     bool ended = ren.ended.get();
-
+    std::cout << "I had no idea how to put this so it prints this :p\n";
     
 }
 

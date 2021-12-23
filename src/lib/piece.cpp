@@ -64,7 +64,7 @@ size_t get_next(){
 
 void piece::act(){
     std::cout << "act thread: " << std::this_thread::get_id() << '\n';
-    bool cont = true;
+    bool cont = true; //this variable is used so the key movement happens until you release one key 
     uint32_t start = 0;
     SDL_Keycode prev;
     while(!end_game){
@@ -77,7 +77,6 @@ void piece::act(){
             case SDLK_DOWN:
                 move_down();
                 break;
-
             case SDLK_LEFT:
                 move_side(side::left);
                 break;
@@ -101,6 +100,7 @@ void piece::act(){
 }
 
 void piece::loop(){
+    //first set's the piece at 0,15 of the board in the renderer
     set_padding();
     *this = tetros[get_next()];
 
@@ -115,9 +115,11 @@ void piece::loop(){
             if(end - start < speed) continue;
             start = end;
 
+            //locks the piece movement to avoid any conflicts to the action thread of the piece
             std::lock_guard<std::mutex> piece_lock(this->piece_mutex);
             move_down();
         }
+        //waits for the renderer to render the piece again
         std::unique_lock<std::mutex> ren_lock(ren.render_mutex);
         ren.ended_render.wait(ren_lock, []{return ren.rendering || end_game;});
         ren_lock.unlock();

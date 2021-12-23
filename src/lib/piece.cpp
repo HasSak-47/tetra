@@ -23,6 +23,7 @@ static size_t order[7] = {};
 static std::default_random_engine generator;
 static std::uniform_int_distribution<size_t> distribution(0,6);
 
+//generates a list of the next pieces that contains all 7 pieces without repeating one
 static void generate_orders(size_t order[6]){
     for(size_t i = 0; i < 6; ++i){
         bool unique = true;

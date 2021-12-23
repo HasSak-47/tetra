@@ -44,6 +44,7 @@ piece::piece(board& b, std::string path) :
     for(size_t i = 0; i < 10; ++i){
         std::string line = {};
         getline(in_file, line);
+        if(line.size() == 0) continue;
         lines[index++] << line;
     }
 

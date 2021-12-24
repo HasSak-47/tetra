@@ -4,7 +4,7 @@ this is the classical game of tetris made in c++ and using the SDL2 framework
 ### what is expected
 when the game begins in the console and prints:
   * starting game...
-  * total scores loaded: 1
+  * total scores loaded: ####
   * setting rendered objects...
   * starting threads...
 
@@ -16,9 +16,14 @@ after that all of this may appear in any particular order
 
 this will appear when the window is closed
   * setting value
-  * closing rendered window
+  * Closing rendered window
   * ended falling loop
-  * I had no idea how to put this so it prints this :p
+  * what is your name?
+  * (user input saved to #name)
+  * #name your score is ####
+
+  * total scores that are going to show up: ####
+  * (shows scores 1 to 3 or all that there are available)
   * ended threads
   * ended program (hopefully) without issues!
 

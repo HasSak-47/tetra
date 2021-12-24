@@ -96,7 +96,7 @@ int main(){
     size_t max_show = order.size() > 3 ? 3 : order.size();
     std::cout << "total scores that are going to show up: " << max_show << '\n';
     for(size_t i = 0; i < max_show; ++i){
-        std::cout << "place " << i << " : " << order[i] << '\n'; 
+        std::cout << "place " << i + 1<< " : " << order[i] << '\n'; 
     }
 
     std::cout << "ended threads\n";

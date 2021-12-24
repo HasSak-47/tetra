@@ -36,10 +36,5 @@ void renderee::set_pos(float x, float y){
     m_pos = {x, y};
 }
 
-void interact::act(){}
-
+//this function is called by all the renderee instances and the render function isn't virtual
 void renderee::set_rectangles() {}
-
-void interact::set_renderer(renderer* rend){
-    this->m_rend = rend;
-}

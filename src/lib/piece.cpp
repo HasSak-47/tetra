@@ -23,7 +23,7 @@ static size_t order[7] = {};
 static std::default_random_engine generator;
 static std::uniform_int_distribution<size_t> distribution(0,6);
 
-//generates a list of the next pieces that contains all 7 pieces without repeating one
+//generates a list of the next pieces that contains all 7 pieces without repeating onecd 
 static void generate_orders(size_t order[6]){
     for(size_t i = 0; i < 6; ++i){
         bool unique = true;
@@ -41,14 +41,17 @@ static void generate_orders(size_t order[6]){
     }
 }
 
+//the function thread that makes generates the piece order
 void generate_piece_queue(){
     size_t seed = time(0);
     generator = std::minstd_rand0(seed);
     generate_orders(order);
     std::cout << "seed: "<< seed <<'\n';
     while(!end_game){
+        //locks all threads that uses the gen_mutex
         std::lock_guard<std::mutex> lock(gen_mutex);
 
+        //each time it uses all the pieces it resets
         if(uses > 6){
             generate_orders(order);
             uses = 0;
@@ -65,16 +68,18 @@ size_t get_next(){
 
 void piece::act(){
     std::cout << "act thread: " << std::this_thread::get_id() << '\n';
-    bool cont = true; //this variable is used so the key movement happens until you release one key 
+    //this variable is used so the key movement happens until you release one key 
+    bool cont = true;
     uint32_t start = 0;
     SDL_Keycode prev;
     while(!end_game){
-        if(m_rend->get_event().type == SDL_KEYDOWN && (cont || prev != m_rend->get_event().key.keysym.sym)){
+        //checks if a key was pressed and if that key is different from the previous key pressed 
+        if(rend->get_event().type == SDL_KEYDOWN && (cont || prev != rend->get_event().key.keysym.sym)){
             std::lock_guard<std::mutex> piece_lock(this->piece_mutex);
             start = SDL_GetTicks();
 
-            prev = m_rend->get_event().key.keysym.sym;
-            switch (m_rend->get_event().key.keysym.sym){
+            prev = rend->get_event().key.keysym.sym;
+            switch (rend->get_event().key.keysym.sym){
             case SDLK_DOWN:
                 move_down();
                 break;
@@ -93,8 +98,8 @@ void piece::act(){
 
             cont = false;
         }
-        else 
-        if(m_rend->get_event().type == SDL_KEYUP){
+        else
+        if(rend->get_event().type == SDL_KEYUP){
             cont = true;
         }
     }
@@ -111,7 +116,7 @@ void piece::loop(){
 
     while(!end_game){
         {
-            this->m_rend->wait_for_render();
+            this->rend->wait_for_render();
             end = SDL_GetTicks();
             if(end - start < speed) continue;
             start = end;
@@ -129,6 +134,7 @@ void piece::loop(){
     std::cout << "ended falling loop\n";
 }
 
+//sets all the rectangles that makes up the tetramino
 void piece::set_rectangles(){
     auto unit = ren.get_unit();
 
@@ -136,11 +142,13 @@ void piece::set_rectangles(){
 
     std::unique_ptr<SDL_Rect> ptr;
     for(auto& p : pieces){
+        //the position is calculated by getting the padding and then moves it inside the board
         vec2i pos = {
             padding.x + unit.x * (board_pos.x + p.x),
             padding.y + unit.y * ( 15 - (board_pos.y + p.y) )
         };
 
+        //can't use make_unique<SDL_Rect> :(
         ptr = std::unique_ptr<SDL_Rect>(new SDL_Rect {pos.x, pos.y, unit.x, unit.y});
         this->m_rects.push_back(std::move(ptr));
     }

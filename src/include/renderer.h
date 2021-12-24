@@ -107,11 +107,9 @@ public:
 
 class interact{
 protected:
-    renderer* m_rend;
 public:
-    void set_renderer(renderer* rend);
-
-    virtual void act();
+    renderer* rend;
+    virtual void act() = 0;
 };
 
 extern bool end_game;

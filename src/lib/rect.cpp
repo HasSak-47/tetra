@@ -30,6 +30,8 @@ rect::rect(float x, float y, int w, int h, color col) :
 }
 
 rect::~rect(){}
+
+//since rect by itself doesn't set rectangles the function remains empty 
 void rect::set_rectangles(){}
 
 vec2i rect::get_padding(){

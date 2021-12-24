@@ -183,6 +183,7 @@ void piece::move_down() {
             }
         }
 
+        speed += 100;
         *this = tetros[next_piece];
     }
 }

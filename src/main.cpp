@@ -70,6 +70,7 @@ int main(){
     threads.push_back(std::thread(&piece::act, &falling));
     threads.push_back(std::thread(sort_scores));
     for(auto& thr : threads){
+        std::cout << "joining threads...\n";
         thr.join();
     }
     SDL_Quit();

@@ -11,10 +11,9 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 #set(THREADS_PREFER_PTHREAD_FLAG ON)
 
 find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS} "src/include")
+include_directories(${SDL2_INCLUDE_DIRS} "include")
 
-file(GLOB COMPILATION_UNITS "src/lib/*.cpp")
+file(GLOB COMPILATION_UNITS "src/*.cpp")
 add_executable(tetris ${COMPILATION_UNITS})
 
-string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 target_link_libraries(tetris ${SDL2_LIBRARIES})

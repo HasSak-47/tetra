@@ -9,23 +9,27 @@
 #include <vector.hpp>
 #include <renderer.hpp>
 
+#define WIDTH 800
+#define HEIGHT 600
+
+
 int main(){
     auto window = Window();
     int x = 10;
     int y = 16;
-    int target = 16;
+
+    int border_x = (800 - x * 31) / 2;
+
     float mulx = 255.0 / x;
     float muly = 255.0 / y;
-    auto render = GridRender(window, 100, 100, 600, 500, x, y);
+    auto render = GridRender(window, border_x, 50, x * 31, y * 31, x, y);
 
     auto start = std::chrono::system_clock::now();
     for(int indx = 0; indx < x * y; ++indx){
         Vector2<int> pos = {indx % x, indx / x};
-        render.write(GridElement().set_bg_color(pos.x * mulx, pos.y * muly, 0, 0).set_type(Type::Rect));
-
-        render.present();
+        render.write_at(GridElement().set_bg_color(pos.x * mulx, pos.y * muly).set_type(Type::Rect), pos.x, pos.y);
     }
 
     render.present();
-    std::this_thread::sleep_for(std::chrono::duration<float>(10));
+    std::this_thread::sleep_for(std::chrono::duration<float>(1));
 }

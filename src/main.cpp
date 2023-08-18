@@ -9,58 +9,23 @@
 #include <vector.hpp>
 #include <renderer.hpp>
 
-class Renderee{
-protected:
-    Renderer& _renderer;
-public:
-    Renderee(Renderer& render) : _renderer(render){}
-
-    virtual void render() = 0;
-};
-
-namespace Renderees{
-class ColoredSquare: public Renderee{
-public:
-    SDL_Rect _rectangle = {};
-    int r, g, b, a;
-    ColoredSquare(GridRender& render, int x = 0, int y = 0, int r = 0, int g = 0, int b = 0, int a = 255) :
-        Renderee(render),
-        r(r), b(b), g(g), a(a)
-    {
-        const auto grid_size = render.get_grid_size();
-        this->_rectangle = {
-            x * grid_size.x,
-            y * grid_size.y,
-            1 * grid_size.x,
-            1 * grid_size.y,
-        };
-
-        
-    }
-
-    void render() override {
-        auto render_ptr = this->_renderer.get_render();
-        SDL_SetRenderDrawColor(render_ptr, r, g, b, a);
-        SDL_RenderFillRect(render_ptr, &this->_rectangle);
-
-    }
-};
-}
-
-using namespace Renderees;
-
 int main(){
-    auto render = GridRender();
+    auto window = Window();
+    int x = 10;
+    int y = 16;
+    int target = 16;
+    float mulx = 255.0 / x;
+    float muly = 255.0 / y;
+    auto render = GridRender(window, 100, 100, 600, 500, x, y);
 
-    std::vector<ColoredSquare> squares = {};
-    for(int indx = 0; indx < 100; ++indx){
-        Vector2<int> pos = {indx % 10, indx / 10};
+    auto start = std::chrono::system_clock::now();
+    for(int indx = 0; indx < x * y; ++indx){
+        Vector2<int> pos = {indx % x, indx / x};
+        render.write(GridElement().set_bg_color(pos.x * mulx, pos.y * muly, 0, 0).set_type(Type::Rect));
 
-        ColoredSquare(render, pos.x, pos.y, pos.x * 25, pos.y * 25).render();
-        render.render();
-        std::this_thread::sleep_for(std::chrono::duration<float>(0.1));
+        render.present();
     }
 
-    render.render();
-    std::this_thread::sleep_for(std::chrono::duration<float>(1));
+    render.present();
+    std::this_thread::sleep_for(std::chrono::duration<float>(10));
 }

@@ -78,7 +78,6 @@ void piece::act(){
             std::lock_guard<std::mutex> piece_lock(this->piece_mutex);
             start = SDL_GetTicks();
 
-            prev = rend->get_event().key.keysym.sym;
             switch (rend->get_event().key.keysym.sym){
             case SDLK_DOWN:
                 move_down();

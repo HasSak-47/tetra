@@ -110,8 +110,8 @@ public:
         _offset(Vector2<int>{x, y}),
         _count(Vector2<int>{xcount, ycount})
     {
-        int delta_x = w - x;
-        int delta_y = h - y;
+        int delta_x = w;
+        int delta_y = h;
         int step_x = delta_x / xcount;
         int step_y = delta_y / ycount;
 

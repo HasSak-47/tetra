@@ -13,13 +13,11 @@ class Window{
 private:
     SDL_Window* _win;
     SDL_Renderer* _ren;
-    int width;
-    int height;
+    int width = 800;
+    int height = 600;
 public:
     Window(){
-        width = 600;
-        height = 600;
-        this->_win= SDL_CreateWindow("tetris", 0, 0, 600, 600, 0);
+        this->_win= SDL_CreateWindow("tetris", 0, 0, width, height, 0);
         this->_ren= SDL_CreateRenderer(this->_win, 0, 0);
     }
 
@@ -59,7 +57,7 @@ public:
     Type t = (Type)0;
 
     GridElement() {}
-    GridElement& set_bg_color(int r, int g, int b, int a){
+    GridElement& set_bg_color(int r, int g = 0, int b = 0, int a = 255){
         bg_color.r = r;
         bg_color.g = g;
         bg_color.b = b;
@@ -144,13 +142,26 @@ public:
         //this->_buffer[_pos]= element;
         SDL_SetRenderDrawColor(this->_render_target.get_renderer(), element.bg_color.r, element.bg_color.g, element.bg_color.b, element.bg_color.a);
         if(element.t == Type::Rect){
-            SDL_RenderDrawRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
+            SDL_RenderFillRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
         }
         else{
-            SDL_RenderFillRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
+            SDL_RenderDrawRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
         }
         this->_pos++;
         this->_pos %= this->_buffer.size();
+    }
+
+    void write_at(GridElement element, int x, int y){
+
+        int _pos = x + y * this->_size.x;
+
+        SDL_SetRenderDrawColor(this->_render_target.get_renderer(), element.bg_color.r, element.bg_color.g, element.bg_color.b, element.bg_color.a);
+        if(element.t == Type::Rect){
+            SDL_RenderFillRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
+        }
+        else{
+            SDL_RenderDrawRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
+        }
     }
 
     Vector2<int> get_grid_size() { return this->_size; }

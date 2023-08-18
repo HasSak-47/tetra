@@ -133,35 +133,29 @@ public:
     ~GridRender(){}
 
     void present () override {
-        std::this_thread::sleep_for(std::chrono::duration<float>(0.001));
+        auto renderer = this->_render_target.get_renderer();
+        for(const auto& element : this->_buffer){
+            auto color = element.bg_color;
+            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+            if((element.t & Type::Rect) != 0){
+                SDL_RenderDrawRect(renderer, element._rect);
+
+            }
+        }
         SDL_RenderPresent(this->_render_target.get_renderer());
     }
 
     void write(GridElement element){
 
-        //this->_buffer[_pos]= element;
+        this->_buffer[_pos]= element;
         SDL_SetRenderDrawColor(this->_render_target.get_renderer(), element.bg_color.r, element.bg_color.g, element.bg_color.b, element.bg_color.a);
-        if(element.t == Type::Rect){
-            SDL_RenderFillRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
-        }
-        else{
-            SDL_RenderDrawRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
-        }
         this->_pos++;
         this->_pos %= this->_buffer.size();
     }
 
     void write_at(GridElement element, int x, int y){
-
-        int _pos = x + y * this->_size.x;
-
-        SDL_SetRenderDrawColor(this->_render_target.get_renderer(), element.bg_color.r, element.bg_color.g, element.bg_color.b, element.bg_color.a);
-        if(element.t == Type::Rect){
-            SDL_RenderFillRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
-        }
-        else{
-            SDL_RenderDrawRect(this->_render_target.get_renderer(), &this->_buffer[_pos]._rect);
-        }
+        int _pos = x + y * this->_count.x;
+        this->_buffer[_pos]= element;
     }
 
     Vector2<int> get_grid_size() { return this->_size; }

@@ -137,10 +137,10 @@ public:
         for(const auto& element : this->_buffer){
             auto color = element.bg_color;
             SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-            if((element.t & Type::Rect) != 0){
-                SDL_RenderDrawRect(renderer, element._rect);
-
-            }
+            if((element.t & Type::Rect) != 0)
+                SDL_RenderFillRect(renderer, &element._rect);
+            else if((element.t & Type::Bord) != 0)
+                SDL_RenderDrawRect(renderer, &element._rect);
         }
         SDL_RenderPresent(this->_render_target.get_renderer());
     }

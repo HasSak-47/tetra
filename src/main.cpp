@@ -65,14 +65,13 @@ int main(){
     std::cout << "starting threads...\n";
     std::vector<std::thread> threads;
     threads.push_back(std::thread(generate_piece_queue));
-    threads.push_back(std::thread(&renderer::render, &ren));
+    //threads.push_back(std::thread(&renderer::render, &ren));
     threads.push_back(std::thread(&piece::loop, &falling));
     threads.push_back(std::thread(&piece::act, &falling));
     threads.push_back(std::thread(sort_scores));
-    for(auto& thr : threads){
-        std::cout << "joining threads...\n";
-        thr.join();
-    }
+
+    ren.render();
+    std::cout << "exiting...\n";
     SDL_Quit();
     
     std::string name;

@@ -1,3 +1,4 @@
+#include <SDL_render.h>
 #include <renderer.h>
 #include <thread>
 
@@ -7,13 +8,22 @@ static vec2i set_unit(vec2i& screen_size){
 
 renderer::renderer() : m_win(nullptr, &SDL_DestroyWindow), m_ren(nullptr, &SDL_DestroyRenderer){}
 
+void delete_renderer(SDL_Renderer* ptr){
+    std::cout << "deleting renderer" << std::endl;
+    SDL_DestroyRenderer(ptr);
+}
+
 renderer::renderer(const char* name, int width, int height): 
     m_win( SDL_CreateWindow(name, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0), &SDL_DestroyWindow),
-    m_ren( SDL_CreateRenderer(m_win.get(), -1, 0), &SDL_DestroyRenderer),
+    m_ren( nullptr, &SDL_DestroyRenderer),
     m_dimention(width, height),
     m_unit(set_unit(m_dimention)),
     m_unit_dimention(24 , 18)
-    {
+{
+    SDL_Renderer* renderer = SDL_CreateRenderer(m_win.get(), 0, 0);
+    m_ren = std::unique_ptr<SDL_Renderer, void(*)(SDL_Renderer*)>(renderer, &delete_renderer);
+    std::cout << "renderer ptr: "  << m_ren.get() << '\n';
+
     ended = promise_end.get_future();
 }
 
@@ -39,7 +49,26 @@ void renderer::render() {
         //this is the start time of the rendering process
 
         //we get the inputs
+        SDL_Event prev = m_event;
+        const size_t size_of = sizeof(prev.key.keysym);
         SDL_PollEvent(&m_event);
+        bool different = false;
+        for(size_t i = 0; i < size_of; ++i){
+            char* a = ((char*)&m_event.key.keysym + i);
+            char* b = ((char*)&prev.key.keysym + i);
+            if(*a != *b){
+                different = true;
+                break;
+            }
+        }
+        if(different){
+            for(size_t i = 0; i < size_of; ++i){
+                char a = *((char*)&m_event.key.keysym + i);
+                std::cout << std::hex << a << ' ';
+            }
+            std::cout << std::endl;
+        }
+
         SDL_SetRenderDrawColor(m_ren.get(), 0x1a, 0x1a, 0x1a, 0x88); //set the background color
         SDL_RenderClear(m_ren.get()); //clear the screen
 
@@ -90,7 +119,6 @@ bool renderer::should_close(){
 }
 
 SDL_Event renderer::get_event(){
-//    SDL_PollEvent(&m_event);
     return this->m_event;
 }
 

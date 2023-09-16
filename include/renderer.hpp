@@ -13,20 +13,19 @@ class Window{
 private:
     SDL_Window* _win;
     SDL_Renderer* _ren;
-    int width = 800;
-    int height = 600;
+    int width;
+    int height;
 public:
-    Window(){
+    Window(int width = 800, int height = 600): width(width), height(height){
         this->_win= SDL_CreateWindow("tetris", 0, 0, width, height, 0);
         this->_ren= SDL_CreateRenderer(this->_win, 0, 0);
     }
 
     int get_height(){return this->height;}
-    int get_width(){return this->width;}
+    int get_width() {return this->width;}
 
     SDL_Renderer* get_renderer(){ return this->_ren; }
     SDL_Window* get_window(){ return this->_win; }
-
 };
 
 class Renderer{
@@ -45,8 +44,11 @@ enum Type{
 };
 
 class GridRender;
+class GridWriter{
+    virtual void write(GridRender& renderer) = 0;
+};
 
-class GridElement{
+class GridElement : public GridWriter{
 protected:
     SDL_Rect _rect;
 public:
@@ -80,21 +82,19 @@ public:
         return *this;
     }
 
+    void write(GridRender& renderer) override{
 
-    friend class GridRender;
+    }
 };
 
 
-class GridWriter{
-    virtual void write(GridRender& renderer) = 0;
-};
 
 class GridRender : public Renderer{
 private: 
     Vector2<int> _size    = {60, 60}; // the size of the grid element
     Vector2<int> _count   = {10, 10}; // the amount of grid elements
     Vector2<int> _offset  = {0, 0};
-    std::vector<GridElement> _buffer;
+    // std::vector<GridElement> _buffer;
     size_t _pos = 0;
     static SDL_Texture CHARACTERS[256];
 public:
@@ -108,26 +108,26 @@ public:
         _offset(Vector2<int>{x, y}),
         _count(Vector2<int>{xcount, ycount})
     {
-        int delta_x = w;
-        int delta_y = h;
-        int step_x = delta_x / xcount;
-        int step_y = delta_y / ycount;
+        // int delta_x = w;
+        // int delta_y = h;
+        // int step_x = delta_x / xcount;
+        // int step_y = delta_y / ycount;
 
-        int grid_count = xcount * ycount;
+        // int grid_count = xcount * ycount;
 
-        this->_size = Vector2<int>{step_x, step_y};
-        this->_buffer.resize(grid_count);
-        for(int i = 0; i < grid_count; ++i){
-            int x = i % this->_count.x;
-            int y = i / this->_count.x;
+        // this->_size = Vector2<int>{step_x, step_y};
+        // this->_buffer.resize(grid_count);
+        // for(int i = 0; i < grid_count; ++i){
+        //     int x = i % this->_count.x;
+        //     int y = i / this->_count.x;
 
-            this->_buffer[i]._rect = {
-                this->_offset.x + x * this->_size.x,
-                this->_offset.y + y * this->_size.y,
-                this->_size.x,
-                this->_size.y
-            };
-        }
+        //     this->_buffer[i]._rect = {
+        //         this->_offset.x + x * this->_size.x,
+        //         this->_offset.y + y * this->_size.y,
+        //         this->_size.x,
+        //         this->_size.y
+        //     };
+        // }
     }
 
     ~GridRender(){}
@@ -145,13 +145,13 @@ public:
         SDL_RenderPresent(this->_render_target.get_renderer());
     }
 
-    void write(GridElement element){
-
-        this->_buffer[_pos]= element;
-        SDL_SetRenderDrawColor(this->_render_target.get_renderer(), element.bg_color.r, element.bg_color.g, element.bg_color.b, element.bg_color.a);
-        this->_pos++;
-        this->_pos %= this->_buffer.size();
-    }
+    // void write(GridElement element){
+    //     this->_buffer[_pos]= element;
+    //     SDL_SetRenderDrawColor(this->_render_target.get_renderer(), element.bg_color.r, element.bg_color.g, element.bg_color.b, element.bg_color.a);
+    //     SDL_RenderDrawRect(this->_render_target.get_renderer(), &element._rect);
+    //     this->_pos++;
+    //     this->_pos %= this->_buffer.size();
+    // }
 
     void write_at(GridElement element, int x, int y){
         int _pos = x + y * this->_count.x;

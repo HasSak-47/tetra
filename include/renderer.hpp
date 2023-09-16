@@ -33,7 +33,17 @@ protected:
     Window& _render_target;
 public:
     Renderer(Window& win) : _render_target(win){}
+
     virtual void present() = 0;
+    void set_color(Vector4<uint8_t> color){
+        auto renderer = this->_render_target.get_renderer();
+        SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    }
+
+    void set_color(uint8_t r, uint8_t g = 0, uint8_t b = 0, uint8_t a = 255){
+        auto renderer = this->_render_target.get_renderer();
+        SDL_SetRenderDrawColor(renderer, r, g, b, a);
+    }
 };
 
 enum Type{
@@ -44,6 +54,7 @@ enum Type{
 };
 
 class GridRender;
+
 class GridWriter{
     virtual void write(GridRender& renderer) = 0;
 };
@@ -56,7 +67,7 @@ public:
     Vector4<int> bg_color = {};
 
     char32_t character = ' ';
-    Type t = (Type)0;
+    Type t = Type::None;
 
     GridElement() {}
     GridElement& set_bg_color(int r, int g = 0, int b = 0, int a = 255){
@@ -97,6 +108,7 @@ private:
     // std::vector<GridElement> _buffer;
     size_t _pos = 0;
     static SDL_Texture CHARACTERS[256];
+    SDL_Rect _buffer = {};
 public:
     GridRender(
             Window& win,
@@ -107,55 +119,21 @@ public:
         Renderer(win),
         _offset(Vector2<int>{x, y}),
         _count(Vector2<int>{xcount, ycount})
-    {
-        // int delta_x = w;
-        // int delta_y = h;
-        // int step_x = delta_x / xcount;
-        // int step_y = delta_y / ycount;
-
-        // int grid_count = xcount * ycount;
-
-        // this->_size = Vector2<int>{step_x, step_y};
-        // this->_buffer.resize(grid_count);
-        // for(int i = 0; i < grid_count; ++i){
-        //     int x = i % this->_count.x;
-        //     int y = i / this->_count.x;
-
-        //     this->_buffer[i]._rect = {
-        //         this->_offset.x + x * this->_size.x,
-        //         this->_offset.y + y * this->_size.y,
-        //         this->_size.x,
-        //         this->_size.y
-        //     };
-        // }
-    }
+    { }
 
     ~GridRender(){}
 
     void present () override {
         auto renderer = this->_render_target.get_renderer();
-        for(const auto& element : this->_buffer){
-            auto color = element.bg_color;
-            SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-            if((element.t & Type::Rect) != 0)
-                SDL_RenderFillRect(renderer, &element._rect);
-            else if((element.t & Type::Bord) != 0)
-                SDL_RenderDrawRect(renderer, &element._rect);
-        }
         SDL_RenderPresent(this->_render_target.get_renderer());
     }
 
-    // void write(GridElement element){
-    //     this->_buffer[_pos]= element;
-    //     SDL_SetRenderDrawColor(this->_render_target.get_renderer(), element.bg_color.r, element.bg_color.g, element.bg_color.b, element.bg_color.a);
-    //     SDL_RenderDrawRect(this->_render_target.get_renderer(), &element._rect);
-    //     this->_pos++;
-    //     this->_pos %= this->_buffer.size();
-    // }
-
-    void write_at(GridElement element, int x, int y){
-        int _pos = x + y * this->_count.x;
-        this->_buffer[_pos]= element;
+    void draw_rect(size_t x, size_t y, size_t w, size_t h){
+        this->_buffer.x = x;
+        this->_buffer.y = x;
+        this->_buffer.w = x;
+        this->_buffer.h = x;
+        SDL_RenderDrawRect(this->_render_target.get_renderer(), &this->_buffer);
     }
 
     Vector2<int> get_grid_size() { return this->_size; }

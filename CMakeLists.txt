@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.11)
 project(Game)
 
 set(CMAKE_CXX_FLAGS, "${CMAKE_CXX_FLAGS} -Wall -std=c++17")
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+set(CMAKE_BUILD_TYPE Debug)
 
 #set(CMAKE_THREAD_LIBS_INIT "-lpthread")
 #set(CMAKE_HAVE_THREADS_LIBRARY 1)
@@ -16,4 +17,5 @@ include_directories(${SDL2_INCLUDE_DIRS} "include")
 file(GLOB COMPILATION_UNITS "src/*.cpp")
 add_executable(tetris ${COMPILATION_UNITS})
 
+# string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 target_link_libraries(tetris ${SDL2_LIBRARIES})

@@ -1,6 +1,7 @@
 #ifndef __RENDERER_HPP__
 #define __RENDERER_HPP__
 
+#include <cstdint>
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -34,7 +35,11 @@ protected:
 public:
     Renderer(Window& win) : _render_target(win){}
 
-    virtual void present() = 0;
+    void present () {
+        auto renderer = this->_render_target.get_renderer();
+        SDL_RenderPresent(this->_render_target.get_renderer());
+    }
+
     void set_color(Vector4<uint8_t> color){
         auto renderer = this->_render_target.get_renderer();
         SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
@@ -53,62 +58,34 @@ enum Type{
     Bord = 0b100
 };
 
-class GridRender;
-
+class GridElement;
+class GridRenderer;
 class GridWriter{
-    virtual void write(GridRender& renderer) = 0;
+public:
+    virtual void write(GridRenderer& ) = 0;
 };
 
-class GridElement : public GridWriter{
-protected:
-    SDL_Rect _rect;
+class GridElement{
 public:
-    Vector4<int> fg_color = {};
-    Vector4<int> bg_color = {};
+    SDL_Rect _rect;
+    Vector4<uint8_t> _fg_color;
+    Vector4<uint8_t> _bg_color;
 
     char32_t character = ' ';
     Type t = Type::None;
-
-    GridElement() {}
-    GridElement& set_bg_color(int r, int g = 0, int b = 0, int a = 255){
-        bg_color.r = r;
-        bg_color.g = g;
-        bg_color.b = b;
-        bg_color.a = a;
-
-        return *this;
-    }
-
-    GridElement& set_type(Type t){
-        this->t = t;
-        return *this;
-    }
-
-    GridElement& operator=(const GridElement& other) {
-        this->fg_color = other.fg_color;
-        this->bg_color = other.bg_color;
-        this->character = other.character;
-        this->t= other.t;
-
-        return *this;
-    }
-
-    void write(GridRender& renderer) override{
-
-    }
 };
-
-
 
 class GridRender : public Renderer{
 private: 
+    static SDL_Texture CHARACTERS[256];
+
+
     Vector2<int> _size    = {60, 60}; // the size of the grid element
     Vector2<int> _count   = {10, 10}; // the amount of grid elements
     Vector2<int> _offset  = {0, 0};
-    // std::vector<GridElement> _buffer;
     size_t _pos = 0;
-    static SDL_Texture CHARACTERS[256];
-    SDL_Rect _buffer = {};
+
+    std::vector<GridElement> _buffer;
 public:
     GridRender(
             Window& win,
@@ -122,21 +99,8 @@ public:
     { }
 
     ~GridRender(){}
-
-    void present () override {
-        auto renderer = this->_render_target.get_renderer();
-        SDL_RenderPresent(this->_render_target.get_renderer());
-    }
-
-    void draw_rect(size_t x, size_t y, size_t w, size_t h){
-        this->_buffer.x = x;
-        this->_buffer.y = x;
-        this->_buffer.w = x;
-        this->_buffer.h = x;
-        SDL_RenderDrawRect(this->_render_target.get_renderer(), &this->_buffer);
-    }
-
     Vector2<int> get_grid_size() { return this->_size; }
+    void write(){}
 };
 
 #endif
